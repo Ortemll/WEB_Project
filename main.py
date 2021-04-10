@@ -1,7 +1,9 @@
 from flask import Flask, url_for, render_template, request
+from orm import db_session
+from orm.__all_models import *
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
+app.config['SECRET_KEY'] = 'pbkdf2:sha256:150000$DnBMMiBR$8d9d49127ae6e44c364f487f1233991db078d9ad32c789dc75e07ddd10ce7daa'
 
 
 @app.route('/', methods=['GET'])
@@ -15,5 +17,11 @@ def register():
     return render_template('register.html', title='Регистрация')
 
 
+def main():
+    db_session.global_init("orm/db/.db")
+
+    # app.run(port=8080, host='127.0.0.1', debug=True)
+
+
 if __name__ == '__main__':
-    app.run(port=8080, host='127.0.0.1', debug=True)
+    main()
