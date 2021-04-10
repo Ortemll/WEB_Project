@@ -13,7 +13,10 @@ class Messages(SqlAlchemyBase, UserMixin, SerializerMixin):
     id = sqlalchemy.Column(sqlalchemy.Integer,
                            primary_key=True, autoincrement=True)
     title = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    content = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     creation_time = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True)
+    likes = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    dislikes = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
 
     creators_id = sqlalchemy.Column(sqlalchemy.String, sqlalchemy.ForeignKey("users.id"))
     discussion_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("discussions.id"))
