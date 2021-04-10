@@ -28,7 +28,7 @@ app.config['SECRET_KEY'] = 'pbkdf2:sha256:150000$DnBMMiBR$8d9d49127ae6e44c364f48
 # api.add_resource(users_resource.UsersListResource, '/api/v2/users/<int:user_id>')
 
 def main():
-    db_session.global_init("orm/db/test_2.db")
+    db_session.global_init("orm/db/test_3.db")
     # app.register_blueprint(jobs_api.blueprint)
 
 
@@ -41,13 +41,13 @@ def load_user(user_id):
 @app.route('/')
 def main_2():
     db_sess = db_session.create_session()
+    a = db_sess.query(Forums).all()
+    slovar = {}
+    for i in a:
+        slovar[i] = db_sess.query(Discussions).filter((Discussions.creators_id == i.id))
     db_sess.commit()
-    return render_template("index.html")
+    return render_template("index.html", slovar=slovar)
 
-
-@app.route('/a')
-def discution():
-    return render_template("index_2.html")
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -87,6 +87,15 @@ def login():
             message = 'Wrong'
             db_sess.commit()
     return render_template('login.html', title='Авторизация', form=form, message=message)
+
+
+@app.route('/<int:id>', methods=['GET', 'POST'])
+def discussion(id):
+    db_sess = db_session.create_session()
+    a = db_sess.query(Discussions).filter(Discussions.id == id).first()
+    b = db_sess.query(Messages).filter((Messages.discussion_id == a.id))
+    db_sess.commit()
+    return render_template("index_2.html", disc=a, mess=b)
 
 
 @app.route('/logout')

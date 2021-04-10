@@ -16,7 +16,20 @@
     <nav class="navbar navbar-light bg-light">
         <div class="container-fluid">
             {% if current_user.is_authenticated %}
-            <a class="navbar-brand" href="/logout">{{ current_user.name }}</a>
+            <p data-bs-toggle="offcanvas"
+                    data-bs-target="#offcanvasWithBackdrop" aria-controls="offcanvasWithBackdrop">{{ current_user.networks }}
+            </p>
+            <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasWithBackdrop"
+                 aria-labelledby="offcanvasWithBackdropLabel">
+                <div class="offcanvas-header">
+                    <h5 class="offcanvas-title" id="offcanvasWithBackdropLabel">Личные данные</h5>
+                    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"
+                            aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body">
+
+                </div>
+            </div>
             {% else %}
             <p>
                 <a class="btn btn-primary " href="/register">Зарегистрироваться</a>
@@ -32,36 +45,6 @@
 </header>
 
 <main role="main" class="container">
-
-    <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas"
-            data-bs-target="#offcanvasWithBackdrop" aria-controls="offcanvasWithBackdrop">Enable backdrop (default)
-    </button>
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasWithBackdrop"
-         aria-labelledby="offcanvasWithBackdropLabel">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="offcanvasWithBackdropLabel">Offcanvas with backdrop</h5>
-            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault">
-                <label class="form-check-label" for="flexSwitchCheckDefault">Default switch checkbox input</label>
-            </div>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="flexSwitchCheckChecked" checked>
-                <label class="form-check-label" for="flexSwitchCheckChecked">Checked switch checkbox input</label>
-            </div>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="flexSwitchCheckDisabled" disabled>
-                <label class="form-check-label" for="flexSwitchCheckDisabled">Disabled switch checkbox input</label>
-            </div>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="flexSwitchCheckCheckedDisabled" checked disabled>
-                <label class="form-check-label" for="flexSwitchCheckCheckedDisabled">Disabled checked switch checkbox
-                    input</label>
-            </div>
-        </div>
-    </div>
     {% block content %}{% endblock %}
 </main>
 <footer>
