@@ -20,7 +20,7 @@ class User(SqlAlchemyBase):
     #       создавать/удалять форумы и всё из 2
     # 2 - "пользователь"  может создавать/редактировать/удалять свои сообщения,
     #       ставить лайки и дизлайки, создавать/удалять обсуждения
-    lvl = sql.Column(sql.Integer, nullable=False, default=2)  # возможно пронадобится и 3 - "незареганный пользователь"
+    lvl = sql.Column(sql.Integer, nullable=False, default=2)
 
     ban = orm.relation('Ban', back_populates='user', uselist=False)
     messages = orm.relation('Message', back_populates='user', uselist=True)
@@ -52,7 +52,9 @@ class Message(SqlAlchemyBase):
     content = sql.Column(sql.Text, nullable=False)
     likes, dislikes = sql.Column(sql.Integer, default=0), sql.Column(sql.Integer, default=0)
     answers_to_id = sql.Column(sql.Integer, sql.ForeignKey('messages.id'), nullable=True, index=True)
+    discussion_id = sql.Column(sql.Integer, sql.ForeignKey("discussions.id"))
 
+    discussion = orm.relation('Discussion', back_populates='comments', uselist=False)
     user = orm.relation('User', back_populates='messages')
 
     # комментарий, на который отвечает данный -> Comment
@@ -67,10 +69,23 @@ class Discussion(SqlAlchemyBase):
     id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)
     title = sql.Column(sql.String, nullable=False)
     question_id = sql.Column(sql.Integer, sql.ForeignKey('messages.id'))
+    answer_id = sql.Column(sql.Integer, sql.ForeignKey('messages.id'), nullable=True)
+    forum_id = sql.Column(sql.Integer, sql.ForeignKey("forums.id"))
 
     question = orm.relation('Message', uselist=False)
-    # ответы на вопрос (все остальные комментарии) можно будет узнать через question.answered_by
+    answer = orm.relation('Message', uselist=False)
+    forum = orm.relation('Forum', back_populates='discussions', uselist=False)
+
+    messages = orm.relation("Message", back_populates='discussion', uselist=True)
 
 
-# class Forum(SqlAlchemyBase):
-#     pass
+class Forum(SqlAlchemyBase):
+    __tablename__ = 'forums'
+
+    id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)
+    title = sql.Column(sql.String, nullable=False)
+    creator_id = sql.Column(sql.String, sql.ForeignKey("users.id"))
+
+    creator = orm.relation('User')
+    discussions = orm.relation("Discussion", back_populates='forum', uselist=True)
+
