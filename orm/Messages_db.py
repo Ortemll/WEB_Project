@@ -1,27 +1,30 @@
+import sqlalchemy as sql
+from .db_session import SqlAlchemyBase
 import datetime
-import sqlalchemy
+from sqlalchemy import orm
 from sqlalchemy_serializer import *
 from flask_login import UserMixin
-from sqlalchemy import orm
-
-from .db_session import SqlAlchemyBase
 
 
-class Messages(SqlAlchemyBase, UserMixin, SerializerMixin):
+class Message(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'messages'
 
-    id = sqlalchemy.Column(sqlalchemy.Integer,
-                           primary_key=True, autoincrement=True)
-    title = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-    content = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-    creation_time = sqlalchemy.Column(sqlalchemy.DateTime, nullable=True)
-    likes = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
-    dislikes = sqlalchemy.Column(sqlalchemy.Integer, nullable=True)
+    id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)
+    date = sql.Column(sql.DateTime, default=datetime.datetime.now)
+    user_id = sql.Column(sql.Integer, sql.ForeignKey('users.id'))
+    content = sql.Column(sql.Text, nullable=False)
+    likes, dislikes = sql.Column(sql.Integer, default=0), sql.Column(sql.Integer, default=0)
 
-    creators_id = sqlalchemy.Column(sqlalchemy.String, sqlalchemy.ForeignKey("users.id"))
-    discussion_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("discussions.id"))
+    # я хочу поговорить на эту тему
+    answers_to_id = sql.Column(sql.Integer, sql.ForeignKey('messages.id'), nullable=True, index=True)
+    # комментарий, на который отвечает данный -> Comment
+    answers_to = orm.relation('Message', back_populates='answered_by', uselist=False)
+    # комментарии, отвечающие на данный -> [Comment, ...]
+    answered_by = orm.relation('Message', uselist=True)
+    # боюсь что запутуюсь
 
-    creator = orm.relation('User')
-    discussion = orm.relation('Discussions')
+    discussion_id = sql.Column(sql.Integer, sql.ForeignKey("discussions.id"))
+    discussion = orm.relation('Discussion', back_populates='messages', uselist=False)
+    user = orm.relation('User', back_populates='messages')
 
 

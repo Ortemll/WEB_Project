@@ -3,13 +3,13 @@ from flask_login import login_user, login_required, LoginManager, logout_user, c
 
 from orm import db_session
 
-from orm.Forums_db import Forums
-from orm.Discussions_db import Discussions
-from orm.Messages_db import Messages
+from orm.Forums_db import Forum
+from orm.Discussions_db import Discussion
+from orm.Messages_db import Message
 from orm.User_db import User
 
 from forms.LoginForm import LoginForm
-from forms.user import RegisterForm
+from forms.RegisterForm import RegisterForm
 from sqlalchemy_serializer import *
 from flask import make_response
 from flask_restful import reqparse, abort, Api, Resource
@@ -28,7 +28,7 @@ app.config['SECRET_KEY'] = 'pbkdf2:sha256:150000$DnBMMiBR$8d9d49127ae6e44c364f48
 # api.add_resource(users_resource.UsersListResource, '/api/v2/users/<int:user_id>')
 
 def main():
-    db_session.global_init("orm/db/test_3.db")
+    db_session.global_init("orm/db/test_3Qq.db")
     # app.register_blueprint(jobs_api.blueprint)
 
 
@@ -41,12 +41,12 @@ def load_user(user_id):
 @app.route('/')
 def main_2():
     db_sess = db_session.create_session()
-    a = db_sess.query(Forums).all()
+    a = db_sess.query(Forum).all()
     slovar = {}
     for i in a:
-        slovar[i] = db_sess.query(Discussions).filter((Discussions.creators_id == i.id))
+        slovar[i] = db_sess.query(Discussion).filter((Discussion.creators_id == i.id))
     db_sess.commit()
-    return render_template("index.html", slovar=slovar)
+    return render_template("index.html", title='Главная страница', slovar=slovar)
 
 
 
@@ -59,18 +59,27 @@ def reqister():
                                    form=form,
                                    message="Пароли не совпадают")
         db_sess = db_session.create_session()
-        if db_sess.query(User).filter(User.networks == form.email.data).first():
-            return render_template('register.html', title='Регистрация',
-                                   form=form,
-                                   message="Такой пользователь уже есть")
+        if len(form.uniq_name.data.strip()) == 0:
+            uniq_name = f'ID:{len(db_sess.query(User).all()) + 1}'
+        else:
+            if db_sess.query(User).filter(User.unique_name == form.uniq_name.data).first():
+                return render_template('register.html', title='Регистрация', form=form, message="Такой пользователь уже есть")
+            uniq_name = form.uniq_name.data
+        if len(form.name.data.strip()) == 0:
+            name = uniq_name
+        else:
+            name = form.name.data
         user = User(
-            networks=form.email.data
+            name=name,
+            unique_name=uniq_name,
+            about=form.about.data,
+            vk_id=form.vk_id.data
         )
         user.set_password(form.password.data)
         db_sess.add(user)
         db_sess.commit()
         return redirect('/login')
-    return render_template('register.html', title='Reg', form=form)
+    return render_template('register.html', title='Регистрация', form=form)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -79,7 +88,7 @@ def login():
     message = ''
     if form.validate_on_submit():
         db_sess = db_session.create_session()
-        user = db_sess.query(User).filter(User.networks == form.email.data).first()
+        user = db_sess.query(User).filter(User.unique_name == form.user_auth_index.data).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
             return redirect("/")
@@ -92,10 +101,10 @@ def login():
 @app.route('/<int:id>', methods=['GET', 'POST'])
 def discussion(id):
     db_sess = db_session.create_session()
-    a = db_sess.query(Discussions).filter(Discussions.id == id).first()
-    b = db_sess.query(Messages).filter((Messages.discussion_id == a.id))
+    a = db_sess.query(Discussion).filter(Discussion.id == id).first()
+    b = db_sess.query(Message).filter((Message.discussion_id == a.id))
     db_sess.commit()
-    return render_template("index_2.html", disc=a, mess=b)
+    return render_template("index_2.html",title='Обсуждения', disc=a, mess=b)
 
 
 @app.route('/logout')
