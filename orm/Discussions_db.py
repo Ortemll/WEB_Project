@@ -1,22 +1,22 @@
-import datetime
-import sqlalchemy
+import sqlalchemy as sql
+from .db_session import SqlAlchemyBase
+from sqlalchemy import orm
 from sqlalchemy_serializer import *
 from flask_login import UserMixin
-from sqlalchemy import orm
-
-from .db_session import SqlAlchemyBase
 
 
-class Discussions(SqlAlchemyBase, UserMixin, SerializerMixin):
+class Discussion(SqlAlchemyBase):
     __tablename__ = 'discussions'
 
-    id = sqlalchemy.Column(sqlalchemy.Integer,
-                           primary_key=True, autoincrement=True)
-    title = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)
+    title = sql.Column(sql.String, nullable=False)
+    # Не до конца понял для чего это
+    #question_id = sql.Column(sql.Integer, sql.ForeignKey('messages.id'))
+    #answer_id = sql.Column(sql.Integer, sql.ForeignKey('messages.id'), nullable=True)
+    #question = orm.relation('Message', sql.ForeignKey('question_id'), uselist=False)
+    #answer = orm.relation('Message', sql.ForeignKey('answer_id'), uselist=False)
 
-    creators_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("users.id"))
-    forum_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("forums.id"))
+    forum_id = sql.Column(sql.Integer, sql.ForeignKey("forums.id"))
 
-    creator = orm.relation('User')
-    forum = orm.relation('Forums')
-    messages = orm.relation("Messages", back_populates='discussion')
+    forum = orm.relation('Forum', back_populates='discussion', uselist=False)
+    messages = orm.relation("Message", back_populates='discussion', uselist=True)
