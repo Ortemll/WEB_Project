@@ -59,7 +59,10 @@ def register():
         if db_sess.query(User).filter(User.uniq_name == form.uniq_name.data).first():
             return render_template('register.html', title='Регистрация', form=form,
                                    message="Такой пользователь уже есть")
-        user = User(uniq_name=form.uniq_name.data, about=form.about.data, vk_id=form.vk_id.data)
+        user = User()
+        user.uniq_name = form.uniq_name.data
+        user.about = form.about.data
+        user.vk_id = form.vk_id.data
         user.name = form.name.data if form.name.data else form.uniq_name.data
         user.set_password(form.password.data)
         db_sess.add(user)
