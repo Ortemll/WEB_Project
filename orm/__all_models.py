@@ -3,15 +3,16 @@ from sqlalchemy import orm
 from .db_session import SqlAlchemyBase
 import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import  UserMixin
 
 
-class User(SqlAlchemyBase):
+class User(SqlAlchemyBase, UserMixin):
     __tablename__ = 'users'
 
     id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)
     uniq_name = sql.Column(sql.String, index=True, unique=True, nullable=False)
     name = sql.Column(sql.String, nullable=True)
-    about = sql.Column(sql.String, nullable=True)
+    about = sql.Column(sql.Text, nullable=True)
     vk_id = sql.Column(sql.String, index=True, nullable=True, unique=True)
     hashed_password = sql.Column(sql.String, nullable=False)
     # уровни пользоввателей:
@@ -21,6 +22,7 @@ class User(SqlAlchemyBase):
     # 2 - "пользователь"  может создавать/редактировать/удалять свои сообщения,
     #       ставить лайки и дизлайки, создавать/удалять обсуждения
     lvl = sql.Column(sql.Integer, nullable=False, default=2)
+    profile_picture = sql.Column(sql.BLOB, nullable=True)
 
     ban = orm.relation('Ban', back_populates='user', uselist=False)
     messages = orm.relation('Message', back_populates='user', uselist=True)
@@ -35,6 +37,9 @@ class User(SqlAlchemyBase):
         # если set_ban == True, то пользователь блокируется, если False, то разблокируется
         self.ban = Ban(user_id=self.id) if set_ban else None
 
+    def set_profile_picture(self, file):
+        with open(file, 'rb') as picture:
+            self.profile_picture = picture.read()
 
 class Ban(SqlAlchemyBase):
     __tablename__ = 'banned'
@@ -54,7 +59,7 @@ class Message(SqlAlchemyBase):
     answers_to_id = sql.Column(sql.Integer, sql.ForeignKey('messages.id'), nullable=True, index=True)
     discussion_id = sql.Column(sql.Integer, sql.ForeignKey("discussions.id"))
 
-    discussion = orm.relation('Discussion', back_populates='comments', uselist=False)
+    discussion = orm.relation('Discussion', back_populates='messages', uselist=False)
     user = orm.relation('User', back_populates='messages')
 
     # комментарий, на который отвечает данный -> Comment
@@ -68,14 +73,14 @@ class Discussion(SqlAlchemyBase):
 
     id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)
     title = sql.Column(sql.String, nullable=False)
-    question_id = sql.Column(sql.Integer, sql.ForeignKey('messages.id'))
-    answer_id = sql.Column(sql.Integer, sql.ForeignKey('messages.id'), nullable=True)
     forum_id = sql.Column(sql.Integer, sql.ForeignKey("forums.id"))
 
-    question = orm.relation('Message', uselist=False)
-    answer = orm.relation('Message', uselist=False)
-    forum = orm.relation('Forum', back_populates='discussions', uselist=False)
+    # question_id = sql.Column(sql.Integer, sql.ForeignKey('messages.id'))
+    # question = orm.relation('Message', uselist=False)
+    # answer_id = sql.Column(sql.Integer, sql.ForeignKey('messages.id'), nullable=True)
+    # answer = orm.relation('Message', uselist=False, foreign_keys=[answer_id])
 
+    forum = orm.relation('Forum', back_populates='discussions', uselist=False)
     messages = orm.relation("Message", back_populates='discussion', uselist=True)
 
 

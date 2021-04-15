@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Главная страница</h1>
+{% for i in slovar.keys() %}
+<table class="table">
+    <thead>
+    <tr>
+        <th scope="col">{{ i.title }}</th>
+        <th scope="col">Создатель</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for j in slovar[i] %}
+        <tr>
+            <th scope="row"><a href={{j.id}}>{{ j.title }}</a></th>
+            <td>{{j.creator.networks}}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endfor %}
+{% endblock %}
