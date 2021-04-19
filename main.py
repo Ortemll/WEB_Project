@@ -49,6 +49,10 @@ def main_2():
     return render_template("index.html", title='Главная страница', slovar=slovar)
 
 
+@app.route('/Home_page/<uniq_name>')
+def info_about_user(uniq_name):
+    return render_template("Home_page.html", title='Домашняя страница')
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def reqister():
@@ -60,13 +64,19 @@ def reqister():
                                    message="Пароли не совпадают")
         db_sess = db_session.create_session()
         if len(form.uniq_name.data.strip()) == 0:
-            uniq_name = f'ID:{len(db_sess.query(User).all()) + 1}'
+            return render_template('register.html', title='Регистрация',
+                                   form=form,
+                                   message="Никнейм не введён")
         else:
             if db_sess.query(User).filter(User.unique_name == form.uniq_name.data).first():
-                return render_template('register.html', title='Регистрация', form=form, message="Такой пользователь уже есть")
+                return render_template('register.html', title='Регистрация', form=form,
+                                       message="Такой пользователь уже есть")
             uniq_name = form.uniq_name.data
         if len(form.name.data.strip()) == 0:
-            name = uniq_name
+            # если поле name пусто то name генерирутся при помощи какой-то функции
+            # Ты сказал что сам напишешь
+            # name = random_name()
+            pass
         else:
             name = form.name.data
         user = User(
@@ -93,7 +103,7 @@ def login():
             login_user(user, remember=form.remember_me.data)
             return redirect("/")
         else:
-            message = 'Wrong'
+            message = 'Не правильный логин или пароль'
             db_sess.commit()
     return render_template('login.html', title='Авторизация', form=form, message=message)
 
