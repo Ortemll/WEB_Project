@@ -40,6 +40,10 @@ def index():
             filter(Discussion.forum_id == forum.id)
     return render_template("index.html", slovar=forums_and_discussions)
 
+@app.route('/Home_page/<uniq_name>')
+def info_about_user(uniq_name):
+    return render_template("Home_page.html", title='Домашняя страница')
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -56,14 +60,28 @@ def register():
             return render_template('register.html', title='Регистрация', form=form,
                                    message="Ник должен содержать 3 и более символов")
         db_sess = db_session.create_session()
-        if db_sess.query(User).filter(User.uniq_name == form.uniq_name.data).first():
-            return render_template('register.html', title='Регистрация', form=form,
-                                   message="Такой пользователь уже есть")
-        user = User()
-        user.uniq_name = form.uniq_name.data
-        user.about = form.about.data
-        user.vk_id = form.vk_id.data
-        user.name = form.name.data if form.name.data else form.uniq_name.data
+        if len(form.uniq_name.data.strip()) == 0:
+            return render_template('register.html', title='Регистрация',
+                                   form=form,
+                                   message="Никнейм не введён")
+        else:
+            if db_sess.query(User).filter(User.unique_name == form.uniq_name.data).first():
+                return render_template('register.html', title='Регистрация', form=form,
+                                       message="Такой пользователь уже есть")
+            uniq_name = form.uniq_name.data
+        if len(form.name.data.strip()) == 0:
+            # если поле name пусто то name генерирутся при помощи какой-то функции
+            # Ты сказал что сам напишешь
+            # name = random_name()
+            pass
+        else:
+            name = form.name.data
+        user = User(
+            name=name,
+            unique_name=uniq_name,
+            about=form.about.data,
+            vk_id=form.vk_id.data
+        )
         user.set_password(form.password.data)
         db_sess.add(user)
         db_sess.commit()
@@ -90,10 +108,10 @@ def login():
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
             return redirect("/")
-        return render_template('login.html', title='Авторизация', form=form,
-                               message='Пользователя с таким логином не существует')
-    return render_template('login.html', title='Авторизация', form=form)
-
+        else:
+            message = 'Не правильный логин или пароль'
+            db_sess.commit()
+    return render_template('login.html', title='Авторизация', form=form, message=message)
 
 @app.route('/<int:id>', methods=['GET', 'POST'])
 def discussion(id):
