@@ -3,19 +3,15 @@ from flask_login import login_user, login_required, LoginManager, logout_user, c
 
 from orm import db_session
 
-from orm.Forums_db import Forum
-from orm.Discussions_db import Discussion
-from orm.Messages_db import Message
-from orm.User_db import User
+from orm.__all_models import *
 
 from forms.LoginForm import LoginForm
 from forms.RegisterForm import RegisterForm
-from sqlalchemy_serializer import *
 from flask import make_response
-from flask_restful import reqparse, abort, Api, Resource
+
+# from flask_restful import reqparse, abort, Api, Resource
 
 app = Flask(__name__)
-api = Api(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
@@ -23,13 +19,9 @@ app.config['SECRET_KEY'] = 'pbkdf2:sha256:150000$DnBMMiBR$8d9d49127ae6e44c364f48
                            '789dc75e07ddd10ce7daa'
 
 
+# api = Api(app)
 # api.add_resource(users_resource.UsersResource, '/api/v2/users')
-
 # api.add_resource(users_resource.UsersListResource, '/api/v2/users/<int:user_id>')
-
-def main():
-    db_session.global_init("orm/db/test_3Qq.db")
-    # app.register_blueprint(jobs_api.blueprint)
 
 
 @login_manager.user_loader
@@ -39,15 +31,14 @@ def load_user(user_id):
 
 
 @app.route('/')
-def main_2():
+def index():
     db_sess = db_session.create_session()
-    a = db_sess.query(Forum).all()
-    slovar = {}
-    for i in a:
-        slovar[i] = db_sess.query(Discussion).filter((Discussion.creators_id == i.id))
-    db_sess.commit()
-    return render_template("index.html", title='Главная страница', slovar=slovar)
-
+    forums = db_sess.query(Forum).all()
+    forums_and_discussions = {}
+    for forum in forums:
+        forums_and_discussions[forum] = db_sess.query(Discussion). \
+            filter(Discussion.forum_id == forum.id)
+    return render_template("index.html", slovar=forums_and_discussions)
 
 @app.route('/Home_page/<uniq_name>')
 def info_about_user(uniq_name):
@@ -55,13 +46,19 @@ def info_about_user(uniq_name):
 
 
 @app.route('/register', methods=['GET', 'POST'])
-def reqister():
+def register():
     form = RegisterForm()
     if form.validate_on_submit():
         if form.password.data != form.password_again.data:
-            return render_template('register.html', title='Регистрация',
-                                   form=form,
+            return render_template('register.html', title='Регистрация', form=form,
                                    message="Пароли не совпадают")
+        if len(form.password.data) < 5:
+            return render_template('register.html', title='Регистрация', form=form,
+                                   message="Пароль должен содержать 5 и более символов")
+
+        if len(form.uniq_name.data) < 3:
+            return render_template('register.html', title='Регистрация', form=form,
+                                   message="Ник должен содержать 3 и более символов")
         db_sess = db_session.create_session()
         if len(form.uniq_name.data.strip()) == 0:
             return render_template('register.html', title='Регистрация',
@@ -88,17 +85,26 @@ def reqister():
         user.set_password(form.password.data)
         db_sess.add(user)
         db_sess.commit()
-        return redirect('/login')
-    return render_template('register.html', title='Регистрация', form=form)
+
+        login_user(user, remember=form.remember_me.data)
+        return redirect('/')
+    return render_template('register.html', title='Reg', form=form)
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
-    message = ''
     if form.validate_on_submit():
+        auth_index = form.user_auth_index.data
+        if auth_index.startswith('@') and len(auth_index) == 1:
+            render_template('login.html', title='Авторизация', form=form,
+                            message='VK_id пуст')
+
         db_sess = db_session.create_session()
-        user = db_sess.query(User).filter(User.unique_name == form.user_auth_index.data).first()
+        if auth_index.startswith('@'):
+            user = db_sess.query(User).filter(User.vk_id == auth_index[1:]).first()
+        else:
+            user = db_sess.query(User).filter(User.uniq_name == auth_index).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
             return redirect("/")
@@ -107,14 +113,12 @@ def login():
             db_sess.commit()
     return render_template('login.html', title='Авторизация', form=form, message=message)
 
-
 @app.route('/<int:id>', methods=['GET', 'POST'])
 def discussion(id):
     db_sess = db_session.create_session()
-    a = db_sess.query(Discussion).filter(Discussion.id == id).first()
-    b = db_sess.query(Message).filter((Message.discussion_id == a.id))
-    db_sess.commit()
-    return render_template("index_2.html",title='Обсуждения', disc=a, mess=b)
+    discussion = db_sess.query(Discussion).get(id)
+    messages = db_sess.query(Message).filter(Message.discussion_id == discussion.id).all()
+    return render_template("index_2.html", disc=discussion, mess=messages)
 
 
 @app.route('/logout')
@@ -124,6 +128,8 @@ def logout():
     return redirect("/")
 
 
+
 if __name__ == '__main__':
-    main()
+    db_session.global_init("orm/db/.db")
+    # app.register_blueprint(jobs_api.blueprint)
     app.run(port=8080, host='127.0.0.1', debug=True)
