@@ -1,13 +1,11 @@
 from flask_wtf import FlaskForm
-from wtforms import PasswordField, SubmitField, BooleanField
-from wtforms.fields.html5 import EmailField
+from wtforms import PasswordField, StringField, BooleanField, SubmitField
 from wtforms.validators import DataRequired
 
 
 class LoginForm(FlaskForm):
-    user_auth_index = EmailField('Логин', validators=[DataRequired()])
-    password = PasswordField('Пароль', validators=[DataRequired()])
+    user_auth_index = StringField('Введите ваш ник или VK_id (VK_id нужно вводить с @ в начале)',
+                                  validators=[DataRequired()])
+    password = PasswordField('Ведире пароль', validators=[DataRequired()])
     remember_me = BooleanField('Запомнить меня')
     submit = SubmitField('Войти')
-
-
