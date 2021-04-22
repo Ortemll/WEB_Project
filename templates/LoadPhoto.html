@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <form action="" method="post" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <img src="/static/img/{{current_user.profile_picture_name}}" class="img-thumbnail" alt="not_found" width="200"
+             height="200"><br>
+        <div class="row">
+            <div class="col-sm">
+                <input type="file" class="form-control" id="inputGroupFile02" name="image">
+            </div>
+            <div class="col-sm">
+                <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+            </div>
+        </div>
+    </form>
+    <a class="btn btn-primary" href="/">Продолжить</a>
+</div>
+{% endblock %}

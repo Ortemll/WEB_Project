@@ -3,17 +3,19 @@ from sqlalchemy import orm
 from .db_session import SqlAlchemyBase
 import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import  UserMixin
+from werkzeug.utils import secure_filename
+from flask_login import UserMixin
+from sqlalchemy_serializer import SerializerMixin
 
 
-class User(SqlAlchemyBase, UserMixin):
+class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'users'
 
     id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)
     uniq_name = sql.Column(sql.String, index=True, unique=True, nullable=False)
     name = sql.Column(sql.String, nullable=True)
     about = sql.Column(sql.Text, nullable=True)
-    vk_id = sql.Column(sql.String, index=True, nullable=True, unique=True)
+    vk_id = sql.Column(sql.String, index=True, nullable=True)
     hashed_password = sql.Column(sql.String, nullable=False)
     # уровни пользоввателей:
     # 0 - "высший админ"  может удалять пользователей, назначать/удалять админов и всё из 1
@@ -23,6 +25,7 @@ class User(SqlAlchemyBase, UserMixin):
     #       ставить лайки и дизлайки, создавать/удалять свои обсуждения
     lvl = sql.Column(sql.Integer, nullable=False, default=2)
     profile_picture = sql.Column(sql.BLOB, nullable=True)
+    profile_picture_name = sql.Column(sql.String, default='default_image.jpg', nullable=True)
 
     ban = orm.relation('Ban', back_populates='user', uselist=False)
     messages = orm.relation('Message', back_populates='user', uselist=True)
@@ -42,18 +45,23 @@ class User(SqlAlchemyBase, UserMixin):
         # если set_ban == True, то пользователь блокируется, если False, то разблокируется
         self.ban = Ban(user_id=self.id) if set_ban else None
 
-    def set_profile_picture(self, file):
+    def conver_to_binary(self, file):
         with open(file, 'rb') as picture:
-            self.profile_picture = picture.read()
+            blob_data = picture.read()
+        return blob_data
 
-class Ban(SqlAlchemyBase):
+    def write_to_file(self, name, filename):
+        with open(filename, 'wb') as file:
+            file.write(name)
+
+class Ban(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'banned'
 
     user_id = sql.Column(sql.Integer, sql.ForeignKey('users.id'), primary_key=True)
     user = orm.relation('User', back_populates='ban')
 
 
-class Message(SqlAlchemyBase):
+class Message(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'messages'
 
     id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)
@@ -68,7 +76,7 @@ class Message(SqlAlchemyBase):
     user = orm.relation('User', back_populates='messages')
 
 
-class Discussion(SqlAlchemyBase):
+class Discussion(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'discussions'
 
     id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)
@@ -81,7 +89,7 @@ class Discussion(SqlAlchemyBase):
     messages = orm.relation("Message", back_populates='discussion', uselist=True)
 
 
-class Forum(SqlAlchemyBase):
+class Forum(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'forums'
 
     id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)

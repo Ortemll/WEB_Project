@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>{{disc.title}}</h2>
+{% for i in mess %}
+<table class="table">
+    <thead>
+    <tr>
+        <th scope="col">{{ i.title }}</th>
+    </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <th scope="row">{{i.creator.networks}}</th>
+            <td></td>
+        </tr>
+    </tbody>
+</table>
+{% endfor %}
+{% endblock %}
