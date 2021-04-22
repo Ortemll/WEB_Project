@@ -2,22 +2,63 @@
 
 {% block content %}
 <h1>Главная страница</h1>
+<br>
+{% if current_user.is_authenticated and current_user.lvl < 2 %}
+<button class="btn btn-warning" type="button" data-toggle="collapse" data-target="#forum" aria-expanded="false"
+        aria-controls="forum">
+    Создать новый форум
+</button>
+<div class="collapse" id="forum">
+    <form action="" method="post">
+        {{ forum_form.hidden_tag() }}
+        {{ forum_form.forum_title.label }}
+        {{ forum_form.forum_title(class="form-control") }}
+        {{ forum_form.forum_submit(type="submit", class="btn btn-primary") }}
+    </form>
+</div>
+{% endif %}
+
 {% for i in slovar.keys() %}
-<table class="table">
-    <thead>
-    <tr>
-        <th scope="col">{{ i.title }}</th>
-        <th scope="col">Создатель</th>
-    </tr>
-    </thead>
-    <tbody>
+<ul class="list-unstyled">
+    <li><h4>{{ i.title }}</h4>
+        {% if current_user.is_authenticated and
+        (i.creator_id == current_user.id
+        or current_user.lvl == 0) %}
+        <form action="" method="post">
+                <button type="submit" class="btn btn-outline-danger" name="delete_forum" value={{i.id}}>
+                    Удалить форум</button>
+            </form>
+        {% endif %}
+    </li>
+    {% if current_user.is_authenticated %}
+        <button class="btn btn-warning" type="button" data-toggle="collapse" data-target="#discussion{{ loop.index }}"
+                aria-expanded="false" aria-controls="discussion{{ loop.index }}">
+            Создать новое обсуждение в "{{ i.title }}"
+        </button>
+        <div class="collapse" id="discussion{{ loop.index }}">
+            <form action="" method="post">
+                {{ discussion_form.hidden_tag() }}
+                {{ discussion_form.discussion_title(type="text", class="form-control", placeholder="Название обсуждения") }}
+                {{ discussion_form.message(class="form-control", placeholder="Сообщение") }}
+                {{ discussion_form.discussion_submit(type="submit", class="btn btn-primary") }}
+                <input name="forum_id" type="hidden" value={{i.id}}>
+            </form>
+        </div>
+    {% endif %}
+    <ul>
     {% for j in slovar[i] %}
-        <tr>
-            <th scope="row"><a href={{j.id}}>{{ j.title }}</a></th>
-            <td>{{j.creator.networks}}</td>
-        </tr>
+        <li><a href="/discussion/{{j.id}}">{{ j.title }}</a>
+            {% if current_user.is_authenticated and
+            (j.creator.id == current_user.id or
+            current_user.lvl < 2) %}
+            <form action="" method="post">
+                <button type="submit" class="btn btn-outline-danger" name="delete_discussion" value={{j.id}}>
+                    Удалить обсуждение</button>
+            </form>
+            {% endif %}
+        </li>
     {% endfor %}
-    </tbody>
-</table>
+    </ul>
+</ul>
 {% endfor %}
 {% endblock %}

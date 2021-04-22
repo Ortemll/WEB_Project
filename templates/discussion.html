@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ discussion.title }}</h1>
+<br>
+<hr>
+<ul class="list-unstyled">
+    <button class="btn btn-outline-secondary mb-auto" type="button" data-toggle="collapse"
+            data-target="#make-comment"
+            aria-expanded="false"
+            aria-controls="make-comment">Написать комментарий
+    </button>
+    <div class="collapse" id="make-comment">
+        <form action="" method="post">
+            {{ message_form.hidden_tag() }}
+            {{ message_form.message(class="form-control", placeholder="Сообщение") }}
+            {{ message_form.submit(class="btn btn-success") }}
+        </form>
+    </div>
+    {% for message, answers in messages_and_answers.items() %}
+    <li>
+        <div class="media-body" id="{{ message.id }}">
+            <a href="/user/{{ message.user.id }}"><p><strong class="mt-0">{{ message.user.name }}</strong><small>
+                {{ message.user.uniq_name }}</small></p></a>
+            <p>{{ message.content }}</p>
+            {% if current_user.is_authenticated %}
+            <form action="" method="post">
+                <button type="submit" class="btn btn-primary" name="like" value={{message.id}}>
+                    &#128077;
+                </button>
+                <button type="submit" class="btn btn-dark" name="dislike" value={{message.id}}>
+                    &#128078;
+                </button>
+            </form>
+            {% endif %}
+            {% if current_user.is_authenticated and
+            (current_user.id == message.user_id or
+            current_user.lvl < 2) %}
+            <form action="" method="post">
+                <button type="submit" class="btn btn-outline-danger" name="delete_comment" value={{message.id}}>
+                    Удалить комментарий
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        <button class="btn btn-outline-secondary mb-auto" type="button" data-toggle="collapse"
+                data-target="#answer-to{{ message.id }}"
+                aria-expanded="false"
+                aria-controls="answer-to{{ message.id }}">Ответить
+        </button>
+        <div class="collapse" id="answer-to{{ message.id }}">
+            <form action="" method="post">
+                {{ message_form.hidden_tag() }}
+                {{ message_form.message(class="form-control", placeholder="Сообщение") }}
+                {{ message_form.submit(class="btn btn-success") }}
+                <input name="answers_to_id" type="hidden" value={{message.id}}>
+            </form>
+        </div>
+        {% if answers %}
+        <ul>
+            {% for answer in answers %}
+            {% if loop.index == 4 %}
+            <button class="btn btn-outline-info" type="button" data-toggle="collapse"
+                    data-target="#messages-to{{ message.id }}"
+                    aria-expanded="false"
+                    aria-controls="messages-to{{ message.id }}">
+                Показать оставшиеся комментарии
+            </button>
+            <div class="collapse" id="messages-to{{ message.id }}">
+                <!-- завершающая часть </div> будет в конце цикла -->
+                {% endif %}
+                <li>
+                    <div class="media mt-3">
+                        <div class="media-body" id="{{ answer.id }}">
+                            <a href="/user/{{ answer.user.id }}"><p><strong class="mt-0">{{ answer.user.name }}</strong>
+                            </p></a>
+                            отвечает на <a href="#{{ answer.answers_to_id }}">комментарий от {{
+                            db_sess.query(answer.__class__).get(answer.answers_to_id).user.name
+                            }}</a>
+                            <p>{{ answer.content }}</p>
+                            {% if current_user.is_authenticated and
+                            (current_user.id == answer.user_id or
+                            current_user.lvl < 2) %}
+                            <form action="" method="post">
+                                <button type="submit" class="btn btn-outline-danger" name="delete_comment"
+                                        value={{answer.id}}>
+                                    Удалить комментарий
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                        <button class="btn btn-outline-secondary mb-auto" type="button" data-toggle="collapse"
+                                data-target="#answer-to{{ answer.id }}"
+                                aria-expanded="false"
+                                aria-controls="answer-to{{ answer.id }}">Ответить
+                        </button>
+                        <div class="collapse" id="answer-to{{ answer.id }}">
+                            <form action="" method="post">
+                                {{ message_form.hidden_tag() }}
+                                {{ message_form.message(class="form-control", placeholder="Сообщение") }}
+                                {{ message_form.submit(class="btn btn-success") }}
+                                <input name="answers_to_id" type="hidden" value={{answer.id}}>
+                            </form>
+                        </div>
+                    </div>
+                </li>
+                {% if loop.index > 3 and loop.last %}
+                <!-- а вот и она -->
+            </div>
+            {% endif %}
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </li>
+    <hr>
+    {% endfor %}
+</ul>
+{% endblock %}
