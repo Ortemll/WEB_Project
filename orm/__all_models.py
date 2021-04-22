@@ -24,8 +24,8 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     # 2 - "пользователь"  может создавать/редактировать/удалять свои сообщения,
     #       ставить лайки и дизлайки, создавать/удалять свои обсуждения
     lvl = sql.Column(sql.Integer, nullable=False, default=2)
-    profile_picture = sql.Column(sql.BLOB, nullable=True)
-    profile_picture_name = sql.Column(sql.String, default='default_image.jpg', nullable=True)
+    # profile_picture = sql.Column(sql.BLOB, nullable=True)
+    # profile_picture_name = sql.Column(sql.String, default='default_image.jpg', nullable=True)
 
     ban = orm.relation('Ban', back_populates='user', uselist=False)
     messages = orm.relation('Message', back_populates='user', uselist=True)

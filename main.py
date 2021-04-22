@@ -5,20 +5,12 @@ from orm import db_session
 import requests
 from orm.__all_models import *
 
-from forms.LoginForm import LoginForm
+from forms.Forms import *
 from forms.RegisterForm import RegisterForm
 from forms.PhotoLoaderForm import PhotoLoader
 from flask_wtf.csrf import CSRFProtect
 from flask import make_response
-import pandas as pd
-import cx_Oracle
-import PIL
 from flask import request
-from werkzeug.datastructures import CombinedMultiDict
-from PIL import Image
-import base64
-import io
-import cv2
 
 # from flask_restful import reqparse, abort, Api, Resource
 
@@ -132,25 +124,25 @@ def register():
         login_user(user, remember=form.remember_me.data)
         #img_to_save = Image.open(io.BytesIO(current_user.profile_picture))
         #img_to_save.save(rf'C:\Users\Moxim\PycharmProjects\web_new\WEB_Project\static\img\{current_user.id}.jpg', "PNG")
-        return redirect('/register/load_photo')
+        # return redirect('/register/load_photo')
     return render_template('register.html', title='Reg', form=form)
 
 
-@app.route('/register/load_photo', methods=['GET', 'POST'])
-def load():
-    form = PhotoLoader()
-    if form.submit.data:
-        if form.image.data is not None:
-            db_sess = db_session.create_session()
-            f = form.image.data
-            filename = secure_filename(f.filename)
-            f.save(rf'C:\Users\Moxim\PycharmProjects\web_new\WEB_Project\static\img\{filename}')
-            current_user.profile_picture_name = filename
-            current_user.profile_picture = current_user.conver_to_binary(rf'C:\Users\Moxim\PycharmProjects\web_new\WEB_Project\static\img\{filename}')
-            db_sess.merge(current_user)
-            db_sess.commit()
-            return render_template('LoadPhoto.html', title='Load Photo', form=form)
-    return render_template('LoadPhoto.html', title='Load Photo', form=form)
+# @app.route('/register/load_photo', methods=['GET', 'POST'])
+# def load():
+#     form = PhotoLoader()
+#     if form.submit.data:
+#         if form.image.data is not None:
+#             db_sess = db_session.create_session()
+#             f = form.image.data
+#             filename = secure_filename(f.filename)
+#             f.save(rf'C:\Users\Moxim\PycharmProjects\web_new\WEB_Project\static\img\{filename}')
+#             current_user.profile_picture_name = filename
+#             current_user.profile_picture = current_user.conver_to_binary(rf'C:\Users\Moxim\PycharmProjects\web_new\WEB_Project\static\img\{filename}')
+#             db_sess.merge(current_user)
+#             db_sess.commit()
+#             return render_template('LoadPhoto.html', title='Load Photo', form=form)
+#     return render_template('LoadPhoto.html', title='Load Photo', form=form)
 
 
 @app.route('/login', methods=['GET', 'POST'])
