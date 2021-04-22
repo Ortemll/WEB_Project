@@ -19,16 +19,21 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     hashed_password = sql.Column(sql.String, nullable=False)
     # уровни пользоввателей:
     # 0 - "высший админ"  может удалять пользователей, назначать/удалять админов и всё из 1
-    # 1 - "админ"  может блокировать полизователей и удалять комментарии,
+    # 1 - "админ"  может блокировать полизователей и удалять комментарии и обсуждения,
     #       создавать/удалять форумы и всё из 2
     # 2 - "пользователь"  может создавать/редактировать/удалять свои сообщения,
-    #       ставить лайки и дизлайки, создавать/удалять обсуждения
+    #       ставить лайки и дизлайки, создавать/удалять свои обсуждения
     lvl = sql.Column(sql.Integer, nullable=False, default=2)
-    profile_picture = sql.Column(sql.BLOB, nullable=True)
-    profile_picture_name = sql.Column(sql.String, default='default_image.jpg', nullable=True)
+    # profile_picture = sql.Column(sql.BLOB, nullable=True)
+    # profile_picture_name = sql.Column(sql.String, default='default_image.jpg', nullable=True)
 
     ban = orm.relation('Ban', back_populates='user', uselist=False)
     messages = orm.relation('Message', back_populates='user', uselist=True)
+    forums = orm.relation('Forum', back_populates='creator', uselist=True)
+    discussions = orm.relation('Discussion', back_populates='creator', uselist=True)
+
+    # liked = orm.relation('Discussion', foreign_keys='[Mu.assigned_to]', uselist=True)
+    # disliked = orm.relation('Discussion', foreign_keys='[Tasks.assigned_to]', uselist=True)
 
     def set_password(self, password):
         self.hashed_password = generate_password_hash(password)
@@ -61,19 +66,14 @@ class Message(SqlAlchemyBase, UserMixin, SerializerMixin):
 
     id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)
     date = sql.Column(sql.DateTime, default=datetime.datetime.now)
-    user_id = sql.Column(sql.Integer, sql.ForeignKey('users.id'))
+    user_id = sql.Column(sql.Integer, sql.ForeignKey(User.id), nullable=False)
     content = sql.Column(sql.Text, nullable=False)
     likes, dislikes = sql.Column(sql.Integer, default=0), sql.Column(sql.Integer, default=0)
     answers_to_id = sql.Column(sql.Integer, sql.ForeignKey('messages.id'), nullable=True, index=True)
-    discussion_id = sql.Column(sql.Integer, sql.ForeignKey("discussions.id"))
+    discussion_id = sql.Column(sql.Integer, sql.ForeignKey("discussions.id"), nullable=False)
 
     discussion = orm.relation('Discussion', back_populates='messages', uselist=False)
     user = orm.relation('User', back_populates='messages')
-
-    # комментарий, на который отвечает данный -> Comment
-    answers_to = orm.relation('Message', back_populates='answered_by', uselist=False)
-    # комментарии, отвечающие на данный -> [Comment, ...]
-    answered_by = orm.relation('Message', uselist=True)
 
 
 class Discussion(SqlAlchemyBase, UserMixin, SerializerMixin):
@@ -81,13 +81,10 @@ class Discussion(SqlAlchemyBase, UserMixin, SerializerMixin):
 
     id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)
     title = sql.Column(sql.String, nullable=False)
-    forum_id = sql.Column(sql.Integer, sql.ForeignKey("forums.id"))
+    forum_id = sql.Column(sql.Integer, sql.ForeignKey("forums.id"), nullable=False)
+    creator_id = sql.Column(sql.Integer, sql.ForeignKey("users.id"), nullable=False)
 
-    # question_id = sql.Column(sql.Integer, sql.ForeignKey('messages.id'))
-    # question = orm.relation('Message', uselist=False)
-    # answer_id = sql.Column(sql.Integer, sql.ForeignKey('messages.id'), nullable=True)
-    # answer = orm.relation('Message', uselist=False, foreign_keys=[answer_id])
-
+    creator = orm.relation('User', back_populates='discussions', uselist=False)
     forum = orm.relation('Forum', back_populates='discussions', uselist=False)
     messages = orm.relation("Message", back_populates='discussion', uselist=True)
 
@@ -97,8 +94,8 @@ class Forum(SqlAlchemyBase, UserMixin, SerializerMixin):
 
     id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)
     title = sql.Column(sql.String, nullable=False)
-    creator_id = sql.Column(sql.String, sql.ForeignKey("users.id"))
+    creator_id = sql.Column(sql.Integer, sql.ForeignKey("users.id"), nullable=False)
 
-    creator = orm.relation('User')
+    creator = orm.relation('User', back_populates='forums', uselist=False)
     discussions = orm.relation("Discussion", back_populates='forum', uselist=True)
 
