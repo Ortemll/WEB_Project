@@ -5,6 +5,7 @@
 <br>
 <hr>
 <ul class="list-unstyled">
+    {% if current_user.is_authenticated and not current_user.is_banned %}
     <button class="btn btn-outline-secondary mb-auto" type="button" data-toggle="collapse"
             data-target="#make-comment"
             aria-expanded="false"
@@ -17,19 +18,35 @@
             {{ message_form.submit(class="btn btn-success") }}
         </form>
     </div>
-    {% for message, answers in messages_and_answers.items() %}
+    {% endif %}
+    {% for message in sorted(messages_and_answers.keys(), key=key, reverse=True) %}
     <li>
         <div class="media-body" id="{{ message.id }}">
             <a href="/user/{{ message.user.id }}"><p><strong class="mt-0">{{ message.user.name }}</strong><small>
                 {{ message.user.uniq_name }}</small></p></a>
             <p>{{ message.content }}</p>
+            {% if current_user.is_authenticated and
+            current_user.id == message.user_id and not current_user.is_banned %}
+            </div>
+            <button class="btn btn-outline-secondary mb-auto" type="button" data-toggle="collapse"
+                    data-target="#edit{{ message.id }}"
+                    aria-expanded="false"
+                    aria-controls="edit{{ message.id }}">Редактировать
+            </button>
+            <div class="collapse" id="edit{{ message.id }}">
+                <form action="" method="post">
+                    <textarea class="form-control" name="edited_message" required>{{message.content}}</textarea>
+                    <button class="btn btn-success" name="edit_id" value={{message.id}}>Отправить</button>
+                </form>
+            </div>
+            {% endif %}
             {% if current_user.is_authenticated %}
             <form action="" method="post">
                 <button type="submit" class="btn btn-primary" name="like" value={{message.id}}>
-                    &#128077;
+                    &#128077;<span class="badge badge-light">{{ message.likes }}</span>
                 </button>
                 <button type="submit" class="btn btn-dark" name="dislike" value={{message.id}}>
-                    &#128078;
+                    &#128078;<span class="badge badge-light">{{ message.dislikes }}</span>
                 </button>
             </form>
             {% endif %}
@@ -42,6 +59,7 @@
                 </button>
             </form>
             {% endif %}
+        {% if current_user.is_authenticated and not current_user.is_banned %}
         </div>
         <button class="btn btn-outline-secondary mb-auto" type="button" data-toggle="collapse"
                 data-target="#answer-to{{ message.id }}"
@@ -56,9 +74,10 @@
                 <input name="answers_to_id" type="hidden" value={{message.id}}>
             </form>
         </div>
-        {% if answers %}
+        {% endif %}
+        {% if messages_and_answers[message] %}
         <ul>
-            {% for answer in answers %}
+            {% for answer in sorted(messages_and_answers[message], key=key, reverse=True) %}
             {% if loop.index == 4 %}
             <button class="btn btn-outline-info" type="button" data-toggle="collapse"
                     data-target="#messages-to{{ message.id }}"
@@ -74,10 +93,19 @@
                         <div class="media-body" id="{{ answer.id }}">
                             <a href="/user/{{ answer.user.id }}"><p><strong class="mt-0">{{ answer.user.name }}</strong>
                             </p></a>
-                            отвечает на <a href="#{{ answer.answers_to_id }}">комментарий от {{
-                            db_sess.query(answer.__class__).get(answer.answers_to_id).user.name
-                            }}</a>
+                            отвечает на <a href="#{{ answer.answers_to_id }}">комментарий от
+                            {{ db_sess.query(answer.__class__).get(answer.answers_to_id).user.name }}</a>
                             <p>{{ answer.content }}</p>
+                            {% if current_user.is_authenticated %}
+                            <form action="" method="post">
+                                <button type="submit" class="btn btn-primary" name="like" value={{message.id}}>
+                                    &#128077;<span class="badge badge-light">{{ message.likes }}</span>
+                                </button>
+                                <button type="submit" class="btn btn-dark" name="dislike" value={{message.id}}>
+                                    &#128078;<span class="badge badge-light">{{ message.dislikes }}</span>
+                                </button>
+                            </form>
+                            {% endif %}
                             {% if current_user.is_authenticated and
                             (current_user.id == answer.user_id or
                             current_user.lvl < 2) %}
@@ -88,6 +116,7 @@
                                 </button>
                             </form>
                             {% endif %}
+                        {% if current_user.is_authenticated and not current_user.is_banned%}
                         </div>
                         <button class="btn btn-outline-secondary mb-auto" type="button" data-toggle="collapse"
                                 data-target="#answer-to{{ answer.id }}"
@@ -102,6 +131,7 @@
                                 <input name="answers_to_id" type="hidden" value={{answer.id}}>
                             </form>
                         </div>
+                        {% endif %}
                     </div>
                 </li>
                 {% if loop.index > 3 and loop.last %}

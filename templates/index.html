@@ -20,7 +20,7 @@
 
 {% for i in slovar.keys() %}
 <ul class="list-unstyled">
-    <li><h4>{{ i.title }}</h4>
+    <li id="forum{{i.id}}"><h4>{{ i.title }}</h4>
         {% if current_user.is_authenticated and
         (i.creator_id == current_user.id
         or current_user.lvl == 0) %}

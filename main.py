@@ -1,5 +1,5 @@
 from flask import *
-from flask_login import login_user, login_required, LoginManager, logout_user, current_user
+from flask_login import login_user, login_required, LoginManager, logout_user, current_user, AnonymousUserMixin
 from orm import db_session
 from orm.__all_models import *
 from forms.Forms import *
@@ -34,19 +34,9 @@ def index():
 
     if request.method == 'POST':
         if request.form.get('delete_discussion'):
-            disc_to_delete = db_sess.query(Discussion).get(request.form['delete_discussion'])
-            for message in disc_to_delete.messages:
-                db_sess.delete(message)
-            db_sess.delete(disc_to_delete)
-            db_sess.commit()
+            delete_discussion(request.form['delete_discussion'], db_sess)
         elif request.form.get('delete_forum'):
-            forum_to_delete = db_sess.query(Forum).get(request.form['delete_forum'])
-            for disc_to_delete in forum_to_delete.discussions:
-                for message in disc_to_delete.messages:
-                    db_sess.delete(message)
-                db_sess.delete(disc_to_delete)
-            db_sess.delete(forum_to_delete)
-            db_sess.commit()
+            delete_forum(request.form['delete_forum'], db_sess)
 
     if forum_form.forum_submit.data and forum_form.validate():
         forum = Forum(title=forum_form.forum_title.data, creator_id=current_user.id)
@@ -102,7 +92,7 @@ def register():
         user = User()
         user.uniq_name = form.uniq_name.data
         user.about = form.about.data
-        user.vk_id = form.vk_id.data
+        user.vk_id = form.vk_id.data if form.vk_id.data else None
         user.name = form.name.data if form.name.data else form.uniq_name.data
         user.set_password(form.password.data)
         db_sess.add(user)
@@ -138,10 +128,16 @@ def login():
 @app.route('/discussion/<int:id>', methods=['GET', 'POST'])
 def discussion(id):
     db_sess = db_session.create_session()
-    discussion = db_sess.query(Discussion).get(id)
     message_form = MessageForm()
-    # реализовать лайки и дизлайкиииииииииииииииииииииииииииииииииииииииииииииииииииииииииииииииии
+
+    if current_user.is_authenticated:
+        local_current_user = db_sess.query(User).get(current_user.id)  # чтобы небыло проблем с сессиями
+
     if request.method == 'POST':
+        if request.form.get('edit_id'):
+            message = db_sess.query(Message).get(request.form['edit_id'])
+            message.content = request.form['edited_message']
+            db_sess.commit()
         if request.form.get('delete_comment'):
             for comment in db_sess.query(Message).filter(
                     Message.answers_to_id == request.form['delete_comment']).all():
@@ -149,17 +145,34 @@ def discussion(id):
                 db_sess.merge(comment)
             db_sess.delete(db_sess.query(Message).get(request.form['delete_comment']))
             db_sess.commit()
-        # elif request.form.get('like'):
-        #     liked_mess = db_sess.query(Message).get(request.form['like'])
-        #     liked_mess.likes += 1
-        #     db_sess.merge(liked_mess)
-        #     db_sess.commit()
-        # elif  request.form.get('dislike'):
-        #     disliked_mess = db_sess.query(Message).get(request.form['dislike'])
-        #     disliked_mess.likes += 1
-        #     db_sess.merge(disliked_mess)
-        #     db_sess.commit()
 
+        elif request.form.get('like'):
+            liked_mess = db_sess.query(Message).get(request.form['like'])
+            if liked_mess not in local_current_user.liked:
+                if liked_mess in local_current_user.disliked:
+                    local_current_user.disliked.remove(liked_mess)
+                    liked_mess.dislikes -= 1
+                liked_mess.likes += 1
+                local_current_user.liked.append(liked_mess)
+                print(liked_mess.likes == len(liked_mess.liked_by))
+            else:
+                local_current_user.liked.remove(liked_mess)
+                liked_mess.likes -= 1
+            db_sess.commit()
+        elif request.form.get('dislike'):
+            disliked_mess = db_sess.query(Message).get(request.form['dislike'])
+            if disliked_mess not in local_current_user.disliked:
+                if disliked_mess in local_current_user.liked:
+                    local_current_user.liked.remove(disliked_mess)
+                    disliked_mess.likes -= 1
+                local_current_user.disliked.append(disliked_mess)
+                disliked_mess.dislikes += 1
+            else:
+                local_current_user.disliked.remove(disliked_mess)
+                disliked_mess.dislikes -= 1
+            db_sess.commit()
+
+    discussion = db_sess.query(Discussion).get(id)
     if message_form.validate_on_submit():
         message = Message(user_id=current_user.id, content=message_form.message.data,
                           discussion_id=discussion.id)
@@ -182,12 +195,38 @@ def discussion(id):
 
     return render_template("discussion.html", discussion=discussion,
                            messages_and_answers=messages_and_answers,
-                           message_form=message_form, db_sess=db_sess)
+                           message_form=message_form, db_sess=db_sess,
+                           sorted=sorted, key=lambda el: el.date)
 
 
-@app.route('/user/<int:id>', methods=['GET'])
+@app.route('/user/<int:id>', methods=['GET', 'POST'])
 def user(id):
-    pass
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).get(id)
+    if not user:
+        return redirect('/')
+
+    if request.method == 'POST':
+        if request.form.get('set_admin'):
+            user.lvl = 1 if int(request.form['set_admin']) else 2
+            db_sess.commit()
+        elif request.form.get('ban_user'):
+            print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', request.form['ban_user'])
+            user.is_banned = bool(int(request.form['ban_user'])) # aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+            user.lvl = 2
+            db_sess.commit()
+        elif request.form.get('delete_user'):
+            for discussion in user.discussions:
+                delete_discussion(discussion.id, db_sess)
+            for forum in user.forums:
+                delete_forum(forum.id, db_sess)
+            db_sess.delete(user)
+            db_sess.commit()
+            return redirect('/')
+        elif request.form.get('edit_user'):
+            pass  # wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+
+    return render_template('user.html', user=user, max=max, len=len)
 
 
 @app.route('/logout')
@@ -195,6 +234,22 @@ def user(id):
 def logout():
     logout_user()
     return redirect("/")
+
+
+def delete_forum(id, db_sess):
+    forum_to_delete = db_sess.query(Forum).get(id)
+    for disc_to_delete in forum_to_delete.discussions:
+        delete_discussion(disc_to_delete.id, db_sess)
+    db_sess.delete(forum_to_delete)
+    db_sess.commit()
+
+
+def delete_discussion(id, db_sess):
+    disc_to_delete = db_sess.query(Discussion).get(id)
+    for message in disc_to_delete.messages:
+        db_sess.delete(message)
+    db_sess.delete(disc_to_delete)
+    db_sess.commit()
 
 
 if __name__ == '__main__':
