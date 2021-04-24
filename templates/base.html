@@ -10,85 +10,81 @@
 <body>
 <header>
     <nav class="navbar navbar-light bg-primary">
-        <div class="container-fluid">
-            {% if current_user.is_authenticated %}
-            <div>
-                <button class="btn btn-light" type="button" data-bs-toggle="offcanvas"
-                        data-bs-target="#offcanvasScrolling" aria-controls="offcanvasScrolling"><img
-                        src="/static/img/sticks.png" alt="not_found" width="30" height="30"
-                        class="d-inline-block align-text-top">
-                </button>
+        {% if current_user.is_authenticated %}
+        <button class="btn btn-light" type="button" data-bs-toggle="offcanvas"
+                data-bs-target="#offcanvasScrolling" aria-controls="offcanvasScrolling"><img
+                src="/static/img/sticks.png" alt="not_found" width="30" height="30"
+                class="align-text-top">
+        </button>
+        <div class="offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1"
+             id="offcanvasScrolling" aria-labelledby="offcanvasScrollingLabel">
+            <div class="offcanvas-header">
+                <div class="row">
+                    <div class="col-sm text-center">
+                        <h3 class="text-centered-muted">Профиль</h3>
+                    </div>
+                </div>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"
+                        aria-label="Close"></button>
             </div>
-            <div class="offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1"
-                 id="offcanvasScrolling" aria-labelledby="offcanvasScrollingLabel">
-                <div class="offcanvas-header">
-                    <div class="row">
-                        <div class="col-sm text-center">
-                            <h3 class="text-centered-muted">Профиль</h3>
+            <div class="offcanvas-body">
+                <div class="row">
+                    <div class="row justify-content-md-center">
+                        <div class="col col-lg-2">
+                            <img src="/static/img/baseline_notifications_black_24dp.png" alt="not_found" width="45"
+                                 height="45">
+                        </div>
+                        <div class="col-md-auto text-center">
+                            <img src="/static/img/{{current_user.profile_picture_name}}" alt="not_found" width="75"
+                                 height="75"
+                                 class="d-inline-block rounded"><br> {{ current_user.name }}
+                        </div>
+                        <div class="col col-lg-2">
+                            <img src="/static/img/baseline_favorite_black_24dp.png" alt="not_found" width="45"
+                                 height="45">
                         </div>
                     </div>
-                    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"
-                            aria-label="Close"></button>
                 </div>
-                <div class="offcanvas-body">
-                    <div class="row">
+                <ul class="list-group">
+                    <li class="list-group-item"><h6><img src="/static/img/baseline_public_black_24dp.png"
+                                                         alt="not_found" width="15" height="15">
+                        <a href="/"> Главная страница</a></h6>
+                    </li>
+                    <li class="list-group-item">
+                        <h6><a href="/user/{{current_user.id}}"><img
+                                src="/static/img/baseline_home_black_24dp.png"
+                                alt="not_found" width="15" height="15"> Домашняя страница</a></h6>
+                    </li>
+                    <li class="list-group-item"><h6><a href="#" data-bs-toggle="modal"
+                                                       data-bs-target="#exampleModal"
+                                                       class="link-danger"><img
+                            src="/static/img/baseline_logout_black_24dp.png"
+                            alt="not_found" width="15" height="15">Выйти</a></h6>
+                    </li>
+                    <li class="list-group-item">
                         <div class="row justify-content-md-center">
-                            <div class="col col-lg-2">
-                                <img src="/static/img/baseline_notifications_black_24dp.png" alt="not_found" width="45"
-                                     height="45">
+                            <div class="d-grid gap-2 col-6 mx-auto">
+                                <button type="button" class="btn btn-info"><a
+                                        href="https://vk.com/public204028442"><img src="/static/img/vk.png" alt=""
+                                                                                   width="25" height="25"></a>
+                                </button>
                             </div>
-                            <div class="col-md-auto text-center">
-                                <img src="/static/img/{{current_user.profile_picture_name}}" alt="not_found" width="75"
-                                     height="75"
-                                     class="d-inline-block rounded"><br> {{ current_user.name }}
-                            </div>
-                            <div class="col col-lg-2">
-                                <img src="/static/img/baseline_favorite_black_24dp.png" alt="not_found" width="45"
-                                     height="45">
+                            <div class="d-grid gap-2 col-6 mx-auto">
+                                <a class="btn btn-primary" href="https://discord.gg/VXp5bXpaqC">
+                                    <img src="/static/img/discord.png" alt="" width="25" height="25"></a>
                             </div>
                         </div>
-                    </div>
-                    <ul class="list-group">
-                        <li class="list-group-item"><h6><img src="/static/img/baseline_public_black_24dp.png"
-                                                             alt="not_found" width="15" height="15">
-                            <a href="/"> Главная страница</a></h6>
-                        </li>
-                        <li class="list-group-item">
-                            <h6><a href="/user/{{current_user.id}}"><img
-                                    src="/static/img/baseline_home_black_24dp.png"
-                                    alt="not_found" width="15" height="15"> Домашняя страница</a></h6>
-                        </li>
-                        <li class="list-group-item"><h6><a href="#" data-bs-toggle="modal"
-                                                           data-bs-target="#exampleModal"
-                                                           class="link-danger"><img
-                                src="/static/img/baseline_logout_black_24dp.png"
-                                alt="not_found" width="15" height="15">Выйти</a></h6>
-                        </li>
-                        <li class="list-group-item">
-                            <div class="row justify-content-md-center">
-                                <div class="d-grid gap-2 col-6 mx-auto">
-                                    <button type="button" class="btn btn-info"><a
-                                            href="https://vk.com/public204028442"><img src="/static/img/vk.png" alt=""
-                                                                                       width="25" height="25"></a>
-                                    </button>
-                                </div>
-                                <div class="d-grid gap-2 col-6 mx-auto">
-                                    <a class="btn btn-primary" href="https://discord.gg/VXp5bXpaqC">
-                                        <img src="/static/img/discord.png" alt="" width="25" height="25"></a>
-                                </div>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
+                    </li>
+                </ul>
             </div>
-            {% else %}
-            <div>
-                <a class="btn btn-light" href="/register">Зарегистрироваться</a>
-                <a class="btn btn-light" href="/login">Войти</a>
-            </div>
-            {% endif %}
-            <h5>Web Project</h5>
         </div>
+        {% else %}
+        <div>
+            <a class="btn btn-light" href="/register">Зарегистрироваться</a>
+            <a class="btn btn-light" href="/login">Войти</a>
+        </div>
+        {% endif %}
+        <h5>Web Project</h5>
     </nav>
 </header>
 

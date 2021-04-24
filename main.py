@@ -7,8 +7,8 @@ from flask import make_response
 from flask_restful import reqparse, abort, Api, Resource
 from flask_wtf.csrf import CSRFProtect
 import main_api
-from main_api import UsersListResource, UserResource,\
-    ForumsListResource, ForumResource, DiscussionsListResource,\
+from main_api import UsersListResource, UserResource, \
+    ForumsListResource, ForumResource, DiscussionsListResource, \
     DiscussionResource, MessagesListResource, MessageResource
 import requests
 import os
@@ -292,10 +292,14 @@ def user(id):
                     return render_template('user.html', user=user, max=max, len=len,
                                            edit=edit, register_form=register_form,
                                            message="Пользователь с таким VK_id уже есть")
-                vk_id_int = requests.get(f'https://vk.com/{register_form.vk_id.data}')
-                vk_id_str = requests.get(f'https://vk.com/?id={register_form.vk_id.data}')
-                if not vk_id_int and not vk_id_str:
-                    return render_template('register.html', title='Регистрация', form=register_form,
+                if register_form.vk_id.data.isdigit():
+                    vk_id = requests.get(f'https://vk.com/id{register_form.vk_id.data}')
+                else:
+                    vk_id = requests.get(f'https://vk.com/{register_form.vk_id.data}')
+                print(vk_id)
+                if not vk_id:
+                    return render_template('user.html', user=user, max=max, len=len,
+                                           edit=edit, register_form=register_form,
                                            message="Такой vk_id не существует")
             if not user.check_password(register_form.password.data):
                 return render_template('user.html', user=user, max=max, len=len,
