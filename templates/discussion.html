@@ -27,38 +27,38 @@
             <p>{{ message.content }}</p>
             {% if current_user.is_authenticated and
             current_user.id == message.user_id and not current_user.is_banned %}
-            </div>
-            <button class="btn btn-outline-secondary mb-auto" type="button" data-toggle="collapse"
-                    data-target="#edit{{ message.id }}"
-                    aria-expanded="false"
-                    aria-controls="edit{{ message.id }}">Редактировать
+        </div>
+        <button class="btn btn-outline-secondary mb-auto" type="button" data-toggle="collapse"
+                data-target="#edit{{ message.id }}"
+                aria-expanded="false"
+                aria-controls="edit{{ message.id }}">Редактировать
+        </button>
+        <div class="collapse" id="edit{{ message.id }}">
+            <form action="" method="post">
+                <textarea class="form-control" name="edited_message" required>{{message.content}}</textarea>
+                <button class="btn btn-success" name="edit_id" value={{message.id}}>Отправить</button>
+            </form>
+        </div>
+        {% endif %}
+        {% if current_user.is_authenticated %}
+        <form action="" method="post">
+            <button type="submit" class="btn btn-primary" name="like" value={{message.id}}>
+                &#128077;<span class="badge badge-light">{{ message.likes }}</span>
             </button>
-            <div class="collapse" id="edit{{ message.id }}">
-                <form action="" method="post">
-                    <textarea class="form-control" name="edited_message" required>{{message.content}}</textarea>
-                    <button class="btn btn-success" name="edit_id" value={{message.id}}>Отправить</button>
-                </form>
-            </div>
-            {% endif %}
-            {% if current_user.is_authenticated %}
-            <form action="" method="post">
-                <button type="submit" class="btn btn-primary" name="like" value={{message.id}}>
-                    &#128077;<span class="badge badge-light">{{ message.likes }}</span>
-                </button>
-                <button type="submit" class="btn btn-dark" name="dislike" value={{message.id}}>
-                    &#128078;<span class="badge badge-light">{{ message.dislikes }}</span>
-                </button>
-            </form>
-            {% endif %}
-            {% if current_user.is_authenticated and
-            (current_user.id == message.user_id or
-            current_user.lvl < 2) %}
-            <form action="" method="post">
-                <button type="submit" class="btn btn-outline-danger" name="delete_comment" value={{message.id}}>
-                    Удалить комментарий
-                </button>
-            </form>
-            {% endif %}
+            <button type="submit" class="btn btn-dark" name="dislike" value={{message.id}}>
+                &#128078;<span class="badge badge-light">{{ message.dislikes }}</span>
+            </button>
+        </form>
+        {% endif %}
+        {% if current_user.is_authenticated and
+        (current_user.id == message.user_id or
+        current_user.lvl < 2) %}
+        <form action="" method="post">
+            <button type="submit" class="btn btn-outline-danger" name="delete_comment" value={{message.id}}>
+                Удалить комментарий
+            </button>
+        </form>
+        {% endif %}
         {% if current_user.is_authenticated and not current_user.is_banned %}
         </div>
         <button class="btn btn-outline-secondary mb-auto" type="button" data-toggle="collapse"
@@ -98,11 +98,11 @@
                             <p>{{ answer.content }}</p>
                             {% if current_user.is_authenticated %}
                             <form action="" method="post">
-                                <button type="submit" class="btn btn-primary" name="like" value={{message.id}}>
-                                    &#128077;<span class="badge badge-light">{{ message.likes }}</span>
+                                <button type="submit" class="btn btn-primary" name="like" value={{answer.id}}>
+                                    &#128077;<span class="badge badge-light">{{ answer.likes }}</span>
                                 </button>
-                                <button type="submit" class="btn btn-dark" name="dislike" value={{message.id}}>
-                                    &#128078;<span class="badge badge-light">{{ message.dislikes }}</span>
+                                <button type="submit" class="btn btn-dark" name="dislike" value={{answer.id}}>
+                                    &#128078;<span class="badge badge-light">{{ answer.dislikes }}</span>
                                 </button>
                             </form>
                             {% endif %}
@@ -116,7 +116,7 @@
                                 </button>
                             </form>
                             {% endif %}
-                        {% if current_user.is_authenticated and not current_user.is_banned%}
+                            {% if current_user.is_authenticated and not current_user.is_banned%}
                         </div>
                         <button class="btn btn-outline-secondary mb-auto" type="button" data-toggle="collapse"
                                 data-target="#answer-to{{ answer.id }}"

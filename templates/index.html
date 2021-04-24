@@ -30,7 +30,7 @@
             </form>
         {% endif %}
     </li>
-    {% if current_user.is_authenticated %}
+    {% if current_user.is_authenticated and not current_user.is_banned %}
         <button class="btn btn-warning" type="button" data-toggle="collapse" data-target="#discussion{{ loop.index }}"
                 aria-expanded="false" aria-controls="discussion{{ loop.index }}">
             Создать новое обсуждение в "{{ i.title }}"

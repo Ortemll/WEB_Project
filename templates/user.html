@@ -2,6 +2,7 @@
 
 {% block content %}
 
+{% if not edit %}
 {% if current_user.is_authenticated and
 current_user.lvl == 0 and current_user.id != user.id and
 not user.is_banned%}
@@ -26,7 +27,46 @@ not user.is_banned%}
     {% endif %}
 </h2>
 <h4>{{ user.uniq_name }}</h4>
+<h5>{{ user.about }}</h5>
 <hr>
+
+{% else %}
+{% if message %}
+    <p class="alert alert-danger" role="alert">{{message}}</p>
+{% endif %}
+<form action="" method="post">
+    {{ register_form.hidden_tag() }}
+    {{ register_form.submit(type="submit", class="form-control", label="Завершить") }}
+    <div class="form-group row">
+        <label for="colFormLabelLg" class="col-sm-2 col-form-label col-form-label-lg">Редактировать имя</label>
+        <div class="col-sm-10">
+            {{ register_form.name(class="form-control form-control-lg", id="colFormLabelLg") }}
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="colFormLabel" class="col-sm-2 col-form-label">Редактировать ник</label>
+        <div class="col-sm-10">
+            {{ register_form.uniq_name(class="form-control", id="colFormLabel") }}
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="colFormLabelSmAbout" class="col-sm-2 col-form-label col-form-label-sm">
+            Редактировать статус</label>
+        <div class="col-sm-10">
+            {{ register_form.about(class="form-control form-control-sm", id="colFormLabelSmAbout") }}
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="colFormLabelSmVK" class="col-sm-2 col-form-label col-form-label-sm">
+            Редактировать VK_id</label>
+        <div class="col-sm-10">
+            {{ register_form.vk_id(class="form-control form-control-sm", id="colFormLabelSmVK") }}
+        </div>
+    </div>
+    <label class="form-control">Для подтверждения введите пароль</label>
+    {{ register_form.password(class="form-control", type="password") }}
+</form>
+{% endif %}
 
 <table class="table">
     <thead class="thead-dark">
@@ -39,7 +79,18 @@ not user.is_banned%}
     {% for i in range(max([len(user.forums), len(user.discussions)])) %}
     <tr>
         {% if i < len(user.discussions) %}
+        {% if not edit %}
         <td><a href="/discussion/{{user.discussions[i].id}}">{{ user.discussions[i].title }}</a></td>
+        {% else %}
+        <td>{{ user.discussions[i].title }}
+            <form action="" method="post">
+                <button type="submit" class="btn btn-outline-danger"
+                        name="delete_discussion" value={{user.discussions[i].id}}>
+                    удалить обсуждение
+                </button>
+            </form>
+        </td>
+        {% endif %}
         {% elif not len(user.discussions) and loop.first %}
         <td>Обсуждений пока нет</td>
         {% else %}
@@ -47,17 +98,42 @@ not user.is_banned%}
         {% endif %}
 
         {% if i < len(user.forums) %}
+        {% if not edit %}
         <td><a href="/#forum{{user.forums[i].id}}">{{ user.forums[i].title }}</a></td>
+        {% else %}
+        <td>{{ user.forums[i].title }}
+            <form action="" method="post">
+                <button type="submit" class="btn btn-outline-danger"
+                        name="delete_forum" value={{user.forums[i].id}}>
+                    удалить форум
+                </button>
+            </form>
+        </td>
+        {% endif %}
         {% elif not len(user.forums) and loop.first %}
         <td>Форумов пока нет</td>
         {% else %}
         <td></td>
         {% endif %}
     </tr>
+    {% else %}
+    <tr>
+        <td>Обсуждений пока нет</td>
+        <td>Форумов пока нет</td>
+    </tr>
     {% endfor %}
     </tbody>
 </table>
-
+{% if current_user.is_authenticated and
+current_user.id == user.id and not edit %}
+<form action="" method="post">
+    <button type="submit" class="btn btn-success"
+            name="edit_user" value={{user.id}}>
+        Редактировать профиль
+    </button>
+</form>
+{% endif %}
+{% if not edit %}
 <footer>
     {% if current_user.is_authenticated%}
     <form action="" method="post">
@@ -112,4 +188,5 @@ not user.is_banned%}
     </form>
     {% endif %}
 </footer>
+{% endif %}
 {% endblock %}

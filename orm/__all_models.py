@@ -4,6 +4,7 @@ from .db_session import SqlAlchemyBase
 import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import  UserMixin
+import os
 
 
 class User(SqlAlchemyBase, UserMixin):
@@ -16,6 +17,14 @@ class User(SqlAlchemyBase, UserMixin):
     vk_id = sql.Column(sql.String, index=True, nullable=True, unique=True)
     hashed_password = sql.Column(sql.String, nullable=False)
     is_banned = sql.Column(sql.Boolean, default=False)
+
+    with open(fr'{os.getcwd()}\static\img\default_image.jpg', 'rb') as picture:
+        blob_data = picture.read()
+    profile_picture = sql.Column(sql.BLOB,
+                                 default=blob_data,
+                                 nullable=True)
+    profile_picture_name = sql.Column(sql.String, default='default_image.jpg', nullable=True)
+
     # уровни пользоввателей:
     # 0 - "высший админ"  может удалять пользователей, назначать/удалять админов и всё из 1
     # 1 - "админ"  может блокировать полизователей и удалять комментарии и обсуждения,
@@ -23,7 +32,6 @@ class User(SqlAlchemyBase, UserMixin):
     # 2 - "пользователь"  может создавать/редактировать/удалять свои сообщения,
     #       ставить лайки и дизлайки, создавать/удалять свои обсуждения
     lvl = sql.Column(sql.Integer, nullable=False, default=2)
-    profile_picture = sql.Column(sql.BLOB, nullable=True)
 
     messages = orm.relation('Message', back_populates='user', uselist=True)
     forums = orm.relation('Forum', back_populates='creator', uselist=True)
@@ -38,10 +46,14 @@ class User(SqlAlchemyBase, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.hashed_password, password)
 
-    def set_profile_picture(self, file):
-        with open(file, 'rb') as picture:
-            self.profile_picture = picture.read()
+    def write_to_file(self, name, filename):
+        with open(filename, 'wb') as file:
+            file.write(name)
 
+    def conver_to_binary(self, file):
+        with open(file, 'rb') as picture:
+            blob_data = picture.read()
+        return blob_data
 
 class Message(SqlAlchemyBase):
     __tablename__ = 'messages'

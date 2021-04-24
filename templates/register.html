@@ -2,7 +2,9 @@
 
 {% block content %}
 <h1>Регистрация</h1>
+{% if message %}
 <p class="alert alert-danger" role="alert">{{message}}</p>
+{% endif %}
 <form action="" method="post">
     {{ form.hidden_tag() }}
     <p>
