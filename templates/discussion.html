@@ -96,46 +96,62 @@
                             отвечает на <a href="#{{ answer.answers_to_id }}">комментарий от
                             {{ db_sess.query(answer.__class__).get(answer.answers_to_id).user.name }}</a>
                             <p>{{ answer.content }}</p>
-                            {% if current_user.is_authenticated %}
-                            <form action="" method="post">
-                                <button type="submit" class="btn btn-primary" name="like" value={{answer.id}}>
-                                    &#128077;<span class="badge badge-light">{{ answer.likes }}</span>
-                                </button>
-                                <button type="submit" class="btn btn-dark" name="dislike" value={{answer.id}}>
-                                    &#128078;<span class="badge badge-light">{{ answer.dislikes }}</span>
-                                </button>
-                            </form>
-                            {% endif %}
                             {% if current_user.is_authenticated and
-                            (current_user.id == answer.user_id or
-                            current_user.lvl < 2) %}
-                            <form action="" method="post">
-                                <button type="submit" class="btn btn-outline-danger" name="delete_comment"
-                                        value={{answer.id}}>
-                                    Удалить комментарий
-                                </button>
-                            </form>
-                            {% endif %}
-                            {% if current_user.is_authenticated and not current_user.is_banned%}
-                        </div>
-                        <button class="btn btn-outline-secondary mb-auto" type="button" data-toggle="collapse"
-                                data-target="#answer-to{{ answer.id }}"
-                                aria-expanded="false"
-                                aria-controls="answer-to{{ answer.id }}">Ответить
-                        </button>
-                        <div class="collapse" id="answer-to{{ answer.id }}">
-                            <form action="" method="post">
-                                {{ message_form.hidden_tag() }}
-                                {{ message_form.message(class="form-control", placeholder="Сообщение") }}
-                                {{ message_form.submit(class="btn btn-success") }}
-                                <input name="answers_to_id" type="hidden" value={{answer.id}}>
-                            </form>
-                        </div>
+                            current_user.id == message.user_id and not current_user.is_banned %}
+                            </div>
+                            <button class="btn btn-outline-secondary mb-auto" type="button" data-toggle="collapse"
+                                    data-target="#edit{{ answer.id }}"
+                                    aria-expanded="false"
+                                    aria-controls="edit{{ answer.id }}">Редактировать
+                            </button>
+                            <div class="collapse" id="edit{{ answer.id }}">
+                                <form action="" method="post">
+                                    <textarea class="form-control" name="edited_message"
+                                              required>{{message.content}}</textarea>
+                                    <button class="btn btn-success" name="edit_id" value={{answer.id}}>Отправить</button>
+                                </form>
+                            </div>
                         {% endif %}
+                        {% if current_user.is_authenticated %}
+                        <form action="" method="post">
+                            <button type="submit" class="btn btn-primary" name="like" value={{answer.id}}>
+                                &#128077;<span class="badge badge-light">{{ answer.likes }}</span>
+                            </button>
+                            <button type="submit" class="btn btn-dark" name="dislike" value={{answer.id}}>
+                                &#128078;<span class="badge badge-light">{{ answer.dislikes }}</span>
+                            </button>
+                        </form>
+                        {% endif %}
+                        {% if current_user.is_authenticated and
+                        (current_user.id == answer.user_id or
+                        current_user.lvl < 2) %}
+                        <form action="" method="post">
+                            <button type="submit" class="btn btn-outline-danger" name="delete_comment"
+                                    value={{answer.id}}>
+                                Удалить комментарий
+                            </button>
+                        </form>
+                        {% endif %}
+                        {% if current_user.is_authenticated and not current_user.is_banned%}
                     </div>
-                </li>
-                {% if loop.index > 3 and loop.last %}
-                <!-- а вот и она -->
+                    <button class="btn btn-outline-secondary mb-auto" type="button" data-toggle="collapse"
+                            data-target="#answer-to{{ answer.id }}"
+                            aria-expanded="false"
+                            aria-controls="answer-to{{ answer.id }}">Ответить
+                    </button>
+                    <div class="collapse" id="answer-to{{ answer.id }}">
+                        <form action="" method="post">
+                            {{ message_form.hidden_tag() }}
+                            {{ message_form.message(class="form-control", placeholder="Сообщение") }}
+                            {{ message_form.submit(class="btn btn-success") }}
+                            <input name="answers_to_id" type="hidden" value={{answer.id}}>
+                        </form>
+                    </div>
+                    {% endif %}
+            </div>
+            </li>
+            {% if loop.index > 3 and loop.last %}
+            <!-- а вот и она -->
             </div>
             {% endif %}
             {% endfor %}

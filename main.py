@@ -101,9 +101,11 @@ def register():
             if db_sess.query(User).filter(User.vk_id == form.vk_id.data).first():
                 return render_template('register.html', title='Регистрация', form=form,
                                        message="Такой vk_id уже есть")
-            vk_id_int = requests.get(f'https://vk.com/{form.vk_id.data}')
-            vk_id_str = requests.get(f'https://vk.com/?id={form.vk_id.data}')
-            if not vk_id_int and not vk_id_str:
+            if form.vk_id.data.isdigit():
+                vk_id = requests.get(f'https://vk.com/id{form.vk_id.data}')
+            else:
+                vk_id = requests.get(f'https://vk.com/{form.vk_id.data}')
+            if not vk_id:
                 return render_template('register.html', title='Регистрация', form=form,
                                        message="Такой vk_id не существует")
 
@@ -296,7 +298,6 @@ def user(id):
                     vk_id = requests.get(f'https://vk.com/id{register_form.vk_id.data}')
                 else:
                     vk_id = requests.get(f'https://vk.com/{register_form.vk_id.data}')
-                print(vk_id)
                 if not vk_id:
                     return render_template('user.html', user=user, max=max, len=len,
                                            edit=edit, register_form=register_form,

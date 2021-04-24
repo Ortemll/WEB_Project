@@ -19,6 +19,9 @@ not user.is_banned%}
 </form>
 {% endif %}
 
+<img src="/static/img/{{user.profile_picture_name}}"
+     alt="image not found" width="75" height="75"
+     class="d-inline-block rounded">
 <h2>{{ user.name }}
     {% if user.lvl == 1 %}
     <span class="badge badge-pill badge-warning">admin</span>
