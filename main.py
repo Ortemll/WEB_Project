@@ -140,6 +140,8 @@ def load():
             filename = secure_filename(f.filename)
             # os.remove(f'/static/img/{current_user.profile_picture_name}', dir_fd=None) надо как то удалить
             f.save(rf'{os.getcwd()}\static\img\{filename}')
+            if current_user.profile_picture_name != 'default_image.jpg':
+                os.remove(f'static/img/{current_user.profile_picture_name}')
             current_user.profile_picture_name = filename
             current_user.profile_picture = current_user.conver_to_binary(rf'{os.getcwd()}\static\img\{filename}')
             db_sess.merge(current_user)
@@ -273,6 +275,8 @@ def user(id):
                 delete_discussion(discussion.id, db_sess)
             for forum in user.forums:
                 delete_forum(forum.id, db_sess)
+            if user.profile_picture_name != 'default_image.jpg':
+                os.remove(f'static/img/{user.profile_picture_name}')
             db_sess.delete(user)
             db_sess.commit()
             return redirect('/')

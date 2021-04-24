@@ -19,14 +19,21 @@ not user.is_banned%}
 </form>
 {% endif %}
 
+{% if current_user.is_authenticated and
+current_user.id == user.id %}
+<a href="/register/load_photo"><img src="/static/img/{{user.profile_picture_name}}"
+     alt="image not found" width="75" height="75"
+                                    class="d-inline-block rounded"></a>
+{% else %}
 <img src="/static/img/{{user.profile_picture_name}}"
      alt="image not found" width="75" height="75"
-     class="d-inline-block rounded">
+                                    class="d-inline-block rounded">
+{% endif %}
 <h2>{{ user.name }}
     {% if user.lvl == 1 %}
-    <span class="badge badge-pill badge-warning">admin</span>
+    <mark>admin</mark>
     {% elif user.lvl == 0 %}
-    <span class="badge badge-pill badge-success">creator</span>
+    <mark>creator</mark>
     {% endif %}
 </h2>
 <h4>{{ user.uniq_name }}</h4>

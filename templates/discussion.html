@@ -97,7 +97,7 @@
                             {{ db_sess.query(answer.__class__).get(answer.answers_to_id).user.name }}</a>
                             <p>{{ answer.content }}</p>
                             {% if current_user.is_authenticated and
-                            current_user.id == message.user_id and not current_user.is_banned %}
+                            current_user.id == answer.user_id and not current_user.is_banned %}
                             </div>
                             <button class="btn btn-outline-secondary mb-auto" type="button" data-toggle="collapse"
                                     data-target="#edit{{ answer.id }}"
