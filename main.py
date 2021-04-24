@@ -1,8 +1,14 @@
 from flask import *
 from flask_login import login_user, login_required, LoginManager, logout_user, current_user
+import os
 from orm import db_session
+import requests
 from orm.__all_models import *
+
 from forms.Forms import *
+from forms.RegisterForm import RegisterForm
+from forms.PhotoLoaderForm import PhotoLoader
+from flask_wtf.csrf import CSRFProtect
 from flask import make_response
 from flask_restful import reqparse, abort, Api, Resource
 from flask_wtf.csrf import CSRFProtect
@@ -144,6 +150,7 @@ def load():
     return render_template('LoadPhoto.html', title='Load Photo', form=form)
 
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
@@ -164,6 +171,11 @@ def login():
         return render_template('login.html', title='Авторизация', form=form,
                                message='Пользователя с таким логином не существует')
     return render_template('login.html', title='Авторизация', form=form)
+
+
+@app.route('/user/<int:id>')
+def info_about_user(id):
+    return render_template("Home_page.html", title='Домашняя страница')
 
 
 @app.route('/discussion/<int:id>', methods=['GET', 'POST'])
@@ -238,6 +250,7 @@ def discussion(id):
                            messages_and_answers=messages_and_answers,
                            message_form=message_form, db_sess=db_sess,
                            sorted=sorted, key=lambda el: el.date)
+
 
 
 @app.route('/user/<int:id>', methods=['GET', 'POST'])
@@ -321,11 +334,13 @@ def user(id):
                            edit=edit, register_form=register_form)
 
 
+
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect("/")
+
 
 
 @app.errorhandler(404)

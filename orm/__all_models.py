@@ -7,14 +7,14 @@ from flask_login import  UserMixin
 import os
 
 
-class User(SqlAlchemyBase, UserMixin):
+class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'users'
 
     id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)
     uniq_name = sql.Column(sql.String, index=True, unique=True, nullable=False)
     name = sql.Column(sql.String, nullable=True)
     about = sql.Column(sql.Text, nullable=True)
-    vk_id = sql.Column(sql.String, index=True, nullable=True, unique=True)
+    vk_id = sql.Column(sql.String, index=True, nullable=True)
     hashed_password = sql.Column(sql.String, nullable=False)
     is_banned = sql.Column(sql.Boolean, default=False)
 
@@ -55,7 +55,7 @@ class User(SqlAlchemyBase, UserMixin):
             blob_data = picture.read()
         return blob_data
 
-class Message(SqlAlchemyBase):
+class Message(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'messages'
 
     id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)
@@ -70,7 +70,7 @@ class Message(SqlAlchemyBase):
     user = orm.relation('User', back_populates='messages')
 
 
-class Discussion(SqlAlchemyBase):
+class Discussion(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'discussions'
 
     id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)
@@ -83,7 +83,7 @@ class Discussion(SqlAlchemyBase):
     messages = orm.relation("Message", back_populates='discussion', uselist=True)
 
 
-class Forum(SqlAlchemyBase):
+class Forum(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'forums'
 
     id = sql.Column(sql.Integer, primary_key=True, autoincrement=True)
