@@ -43,22 +43,58 @@
     </p>
     {% endfor %}
         <p>
-        {{ form.about.label }}<br>
-        {{ form.about(class="form-control", type="textarea") }}<br>
-        {% for error in form.about.errors %}
-    <p class="alert alert-danger" role="alert">
-        {{ error }}
-    </p>
-    {% endfor %}
-    <p>
-        {{ form.vk_id.label }}<br>
-        {{ form.vk_id(class="form-control", type="index") }}<br>
-        {% for error in form.vk_id.errors %}
-    <p class="alert alert-danger" role="alert">
-        {{ error }}
-    </p>
-    {% endfor %}
-    <p>{{ form.remember_me() }} {{ form.remember_me.label }}</p>
-    <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
-</form>
+            {{ form.name.label }}<br>
+            {{ form.name(class="form-control", type="text") }}<br>
+            {% for error in form.name.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+        {% endfor %}
+        </p>
+        <p>
+            {{ form.uniq_name.label }}<br>
+            {{ form.uniq_name(class="form-control", type="text") }}<br>
+            {% for error in form.uniq_name.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+        {% endfor %}
+        </p>
+        <p>
+            {{ form.password.label }}<br>
+            {{ form.password(class="form-control", type="password") }}<br>
+            {% for error in form.password.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+        {% endfor %}
+        </p>
+        <p>
+            {{ form.password_again.label }}<br>
+            {{ form.password_again(class="form-control", type="password") }}<br>
+            {% for error in form.password_again.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+        {% endfor %}
+        <p>
+            {{ form.about.label }}<br>
+            {{ form.about(class="form-control", type="textarea") }}<br>
+            {% for error in form.about.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+        {% endfor %}
+        <p>
+            {{ form.vk_id.label }}<br>
+            {{ form.vk_id(class="form-control", type="index") }}<br>
+            {% for error in form.vk_id.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+        {% endfor %}
+        <p>{{ form.remember_me() }} {{ form.remember_me.label }}</p>
+        <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+    </form>
+</div>
 {% endblock %}
