@@ -10,23 +10,35 @@ from forms.RegisterForm import RegisterForm
 from forms.PhotoLoaderForm import PhotoLoader
 from flask_wtf.csrf import CSRFProtect
 from flask import make_response
-from flask import request
+from flask_restful import reqparse, abort, Api, Resource
+from flask_wtf.csrf import CSRFProtect
+import main_api
+from main_api import UsersListResource, UserResource, \
+    ForumsListResource, ForumResource, DiscussionsListResource, \
+    DiscussionResource, MessagesListResource, MessageResource
+import requests
+import os
+from werkzeug.utils import secure_filename
 
-# from flask_restful import reqparse, abort, Api, Resource
-
-csrf = CSRFProtect()
-
-app = Flask(__name__, template_folder="./templates/")
+app = Flask(__name__)
+api = Api(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 app.config['MAX_CONTENT_LENGTH'] = 4 * 1024 * 1024
 app.config['SECRET_KEY'] = 'pbkdf2:sha256:150000$DnBMMiBR$8d9d49127ae6e44c364f487f1233991db078d9ad32c' \
                            '789dc75e07ddd10ce7daa'
-csrf.init_app(app)
 
-# api = Api(app)
-# api.add_resource(users_resource.UsersResource, '/api/v2/users')
-# api.add_resource(users_resource.UsersListResource, '/api/v2/users/<int:user_id>')
+api.add_resource(UsersListResource, '/api/users')
+api.add_resource(UserResource, '/api/user/<int:user_id>')
+
+api.add_resource(ForumsListResource, '/api/forums')
+api.add_resource(ForumResource, '/api/forum/<int:forum_id>')
+
+api.add_resource(DiscussionsListResource, '/api/discussions')
+api.add_resource(DiscussionResource, '/api/discussion/<int:discussion_id>')
+
+api.add_resource(MessagesListResource, '/api/messages')
+api.add_resource(MessageResource, '/api/message/<int:message_id>')
 
 
 @login_manager.user_loader
@@ -43,19 +55,9 @@ def index():
 
     if request.method == 'POST':
         if request.form.get('delete_discussion'):
-            disc_to_delete = db_sess.query(Discussion).get(request.form['delete_discussion'])
-            for message in disc_to_delete.messages:
-                db_sess.delete(message)
-            db_sess.delete(disc_to_delete)
-            db_sess.commit()
+            delete_discussion(request.form['delete_discussion'], db_sess)
         elif request.form.get('delete_forum'):
-            forum_to_delete = db_sess.query(Forum).get(request.form['delete_forum'])
-            for disc_to_delete in forum_to_delete.discussions:
-                for message in disc_to_delete.messages:
-                    db_sess.delete(message)
-                db_sess.delete(disc_to_delete)
-            db_sess.delete(forum_to_delete)
-            db_sess.commit()
+            delete_forum(request.form['delete_forum'], db_sess)
 
     if forum_form.forum_submit.data and forum_form.validate():
         forum = Forum(title=forum_form.forum_title.data, creator_id=current_user.id)
@@ -105,44 +107,46 @@ def register():
             if db_sess.query(User).filter(User.vk_id == form.vk_id.data).first():
                 return render_template('register.html', title='Регистрация', form=form,
                                        message="Такой vk_id уже есть")
-            vk_id_int = requests.get(f'https://vk.com/{form.vk_id.data}')
-            vk_id_str = requests.get(f'https://vk.com/id{form.vk_id.data}')
-            if not vk_id_int and not vk_id_str:
+            if form.vk_id.data.isdigit():
+                vk_id = requests.get(f'https://vk.com/id{form.vk_id.data}')
+            else:
+                vk_id = requests.get(f'https://vk.com/{form.vk_id.data}')
+            if not vk_id:
                 return render_template('register.html', title='Регистрация', form=form,
                                        message="Такой vk_id не существует")
 
         user = User()
         user.uniq_name = form.uniq_name.data
         user.about = form.about.data
-        user.vk_id = form.vk_id.data
+        user.vk_id = form.vk_id.data if form.vk_id.data else None
         user.name = form.name.data if form.name.data else form.uniq_name.data
         user.set_password(form.password.data)
-        user.profile_picture = user.conver_to_binary(r'C:\Users\Moxim\PycharmProjects\web_new\WEB_Project-main\static\img\default_image.jpg')
+        user.profile_picture = user.conver_to_binary(fr'{os.getcwd()}\static\img\default_image.jpg')
         db_sess.add(user)
         db_sess.commit()
 
         login_user(user, remember=form.remember_me.data)
-        #img_to_save = Image.open(io.BytesIO(current_user.profile_picture))
-        #img_to_save.save(rf'C:\Users\Moxim\PycharmProjects\web_new\WEB_Project\static\img\{current_user.id}.jpg', "PNG")
-        # return redirect('/register/load_photo')
+        return redirect('/register/load_photo')
     return render_template('register.html', title='Reg', form=form)
 
 
-# @app.route('/register/load_photo', methods=['GET', 'POST'])
-# def load():
-#     form = PhotoLoader()
-#     if form.submit.data:
-#         if form.image.data is not None:
-#             db_sess = db_session.create_session()
-#             f = form.image.data
-#             filename = secure_filename(f.filename)
-#             f.save(rf'C:\Users\Moxim\PycharmProjects\web_new\WEB_Project\static\img\{filename}')
-#             current_user.profile_picture_name = filename
-#             current_user.profile_picture = current_user.conver_to_binary(rf'C:\Users\Moxim\PycharmProjects\web_new\WEB_Project\static\img\{filename}')
-#             db_sess.merge(current_user)
-#             db_sess.commit()
-#             return render_template('LoadPhoto.html', title='Load Photo', form=form)
-#     return render_template('LoadPhoto.html', title='Load Photo', form=form)
+@app.route('/register/load_photo', methods=['GET', 'POST'])
+def load():
+    form = PhotoLoader()
+    if form.submit.data:
+        if form.image.data is not None:
+            db_sess = db_session.create_session()
+            f = form.image.data
+            filename = secure_filename(f.filename)
+            # os.remove(f'/static/img/{current_user.profile_picture_name}', dir_fd=None) надо как то удалить
+            f.save(rf'{os.getcwd()}\static\img\{filename}')
+            current_user.profile_picture_name = filename
+            current_user.profile_picture = current_user.conver_to_binary(rf'{os.getcwd()}\static\img\{filename}')
+            db_sess.merge(current_user)
+            db_sess.commit()
+            return render_template('LoadPhoto.html', title='Load Photo', form=form)
+    return render_template('LoadPhoto.html', title='Load Photo', form=form)
+
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -175,10 +179,16 @@ def info_about_user(id):
 @app.route('/discussion/<int:id>', methods=['GET', 'POST'])
 def discussion(id):
     db_sess = db_session.create_session()
-    discussion = db_sess.query(Discussion).get(id)
     message_form = MessageForm()
-    # реализовать лайки и дизлайкиииииииииииииииииииииииииииииииииииииииииииииииииииииииииииииииии
+
+    if current_user.is_authenticated:
+        local_current_user = db_sess.query(User).get(current_user.id)  # чтобы небыло проблем с сессиями
+
     if request.method == 'POST':
+        if request.form.get('edit_id'):
+            message = db_sess.query(Message).get(request.form['edit_id'])
+            message.content = request.form['edited_message']
+            db_sess.commit()
         if request.form.get('delete_comment'):
             for comment in db_sess.query(Message).filter(
                     Message.answers_to_id == request.form['delete_comment']).all():
@@ -186,17 +196,34 @@ def discussion(id):
                 db_sess.merge(comment)
             db_sess.delete(db_sess.query(Message).get(request.form['delete_comment']))
             db_sess.commit()
-        # elif request.form.get('like'):
-        #     liked_mess = db_sess.query(Message).get(request.form['like'])
-        #     liked_mess.likes += 1
-        #     db_sess.merge(liked_mess)
-        #     db_sess.commit()
-        # elif  request.form.get('dislike'):
-        #     disliked_mess = db_sess.query(Message).get(request.form['dislike'])
-        #     disliked_mess.likes += 1
-        #     db_sess.merge(disliked_mess)
-        #     db_sess.commit()
 
+        elif request.form.get('like'):
+            liked_mess = db_sess.query(Message).get(request.form['like'])
+            if liked_mess not in local_current_user.liked:
+                if liked_mess in local_current_user.disliked:
+                    local_current_user.disliked.remove(liked_mess)
+                    liked_mess.dislikes -= 1
+                liked_mess.likes += 1
+                local_current_user.liked.append(liked_mess)
+                print(liked_mess.likes == len(liked_mess.liked_by))
+            else:
+                local_current_user.liked.remove(liked_mess)
+                liked_mess.likes -= 1
+            db_sess.commit()
+        elif request.form.get('dislike'):
+            disliked_mess = db_sess.query(Message).get(request.form['dislike'])
+            if disliked_mess not in local_current_user.disliked:
+                if disliked_mess in local_current_user.liked:
+                    local_current_user.liked.remove(disliked_mess)
+                    disliked_mess.likes -= 1
+                local_current_user.disliked.append(disliked_mess)
+                disliked_mess.dislikes += 1
+            else:
+                local_current_user.disliked.remove(disliked_mess)
+                disliked_mess.dislikes -= 1
+            db_sess.commit()
+
+    discussion = db_sess.query(Discussion).get(id)
     if message_form.validate_on_submit():
         message = Message(user_id=current_user.id, content=message_form.message.data,
                           discussion_id=discussion.id)
@@ -219,7 +246,89 @@ def discussion(id):
 
     return render_template("discussion.html", discussion=discussion,
                            messages_and_answers=messages_and_answers,
-                           message_form=message_form, db_sess=db_sess)
+                           message_form=message_form, db_sess=db_sess,
+                           sorted=sorted, key=lambda el: el.date)
+
+
+
+@app.route('/user/<int:id>', methods=['GET', 'POST'])
+def user(id):
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).get(id)
+    if not user:
+        return redirect('/')
+    edit = False
+    register_form = RegisterForm()
+
+    if request.method == 'POST':
+        if request.form.get('set_admin'):
+            user.lvl = 1 if int(request.form['set_admin']) else 2
+            db_sess.commit()
+        elif request.form.get('ban_user'):
+            user.is_banned = bool(int(request.form['ban_user']))
+            user.lvl = 2
+            db_sess.commit()
+        elif request.form.get('delete_user'):
+            for discussion in user.discussions:
+                delete_discussion(discussion.id, db_sess)
+            for forum in user.forums:
+                delete_forum(forum.id, db_sess)
+            db_sess.delete(user)
+            db_sess.commit()
+            return redirect('/')
+        elif request.form.get('edit_user'):
+            register_form.name.data = user.name
+            register_form.uniq_name.data = user.uniq_name
+            register_form.about.data = user.about
+            register_form.vk_id.data = user.vk_id if user.vk_id else ''
+            register_form.password_again.data = 'no matter'
+            edit = True
+        elif request.form.get('delete_discussion'):
+            delete_discussion(request.form['delete_discussion'], db_sess)
+            edit = True
+        elif request.form.get('delete_forum'):
+            delete_forum(request.form['delete_forum'], db_sess)
+            edit = True
+        elif request.form.get('submit'):
+            edit = True
+            if len(register_form.uniq_name.data) < 3:
+                return render_template('user.html', user=user, max=max, len=len,
+                                       edit=edit, register_form=register_form,
+                                       message="Ник должен содержать 3 и более символов")
+
+            another_user = db_sess.query(User).filter(User.uniq_name == register_form.uniq_name.data).first()
+            if another_user and another_user.id != user.id:
+                return render_template('user.html', user=user, max=max, len=len,
+                                       edit=edit, register_form=register_form,
+                                       message="Такой пользователь уже есть")
+            if register_form.vk_id.data:
+                another_user = db_sess.query(User).filter(User.vk_id == register_form.vk_id.data).first()
+                if another_user and another_user.id != user.id:
+                    return render_template('user.html', user=user, max=max, len=len,
+                                           edit=edit, register_form=register_form,
+                                           message="Пользователь с таким VK_id уже есть")
+                if register_form.vk_id.data.isdigit():
+                    vk_id = requests.get(f'https://vk.com/id{register_form.vk_id.data}')
+                else:
+                    vk_id = requests.get(f'https://vk.com/{register_form.vk_id.data}')
+                if not vk_id:
+                    return render_template('user.html', user=user, max=max, len=len,
+                                           edit=edit, register_form=register_form,
+                                           message="Такой vk_id не существует")
+            if not user.check_password(register_form.password.data):
+                return render_template('user.html', user=user, max=max, len=len,
+                                       edit=edit, register_form=register_form,
+                                       message='Неверный пароль')
+            user.name = register_form.name.data if register_form.name.data else register_form.uniq_name.data
+            user.uniq_name = register_form.uniq_name.data
+            user.about = register_form.about.data
+            user.vk_id = register_form.vk_id.data if register_form.vk_id.data else None
+            db_sess.commit()
+            edit = False
+
+    return render_template('user.html', user=user, max=max, len=len,
+                           edit=edit, register_form=register_form)
+
 
 
 @app.route('/logout')
@@ -230,7 +339,27 @@ def logout():
 
 
 
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'error': 'Not found'}), 404)
+
+
+def delete_forum(id, db_sess):
+    forum_to_delete = db_sess.query(Forum).get(id)
+    for disc_to_delete in forum_to_delete.discussions:
+        delete_discussion(disc_to_delete.id, db_sess)
+    db_sess.delete(forum_to_delete)
+    db_sess.commit()
+
+
+def delete_discussion(id, db_sess):
+    disc_to_delete = db_sess.query(Discussion).get(id)
+    for message in disc_to_delete.messages:
+        db_sess.delete(message)
+    db_sess.delete(disc_to_delete)
+    db_sess.commit()
+
+
 if __name__ == '__main__':
     db_session.global_init("orm/db/.db")
-    # app.register_blueprint(jobs_api.blueprint)
     app.run(port=8080, host='127.0.0.1', debug=True)
